@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <title>自动化巡检测试系统-环境详情</title>
+
+    <link href="/component/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/css/main.css" rel="stylesheet">
+    <link href="/css/loader.css" rel="stylesheet">
+    <link href="/component/css/treeview.min.css" rel="stylesheet">
+
+</head>
+
+<body>
+<div id="wrapper">
+    <div id="sidebar-wrapper">
+        <ul class="sidebar-nav">
+            <li class="sidebar-brand"><a href="/#">自动巡检测试系统</a></li>
+            <li id="menu_tree"></li>
+        </ul>
+    </div>
+
+</div>
+
+<div id="environment-wrapper">
+    <nav aria-label="breadcrumb" style="margin-left: -20px">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="/environment/manage">环境管理</a></li>
+            <li class="breadcrumb-item active" aria-current="page">详情</li>
+        </ol>
+    </nav>
+    <div>
+        <!--<label for="environment_name">环境名称</label>-->
+        <input type="text" class="form-control" id="environment_name" style="width: 50%" placeholder="环境名称" value="">
+    </div>
+    <HR>
+    <button id="add_environment_detail" class="btn btn-primary btn-sm" role="button" style="margin-bottom: 20px;">＋</button>
+
+
+    <form id="environment_form" class="detail_form" style="width: 80%; margin-left: 0">
+    </form>
+
+    <div id="loader"></div>
+    <div id="error_alert" class="alert alert-danger" role="alert"></div>
+    <HR>
+
+    <button id="save_environment" class="btn-group-vertical" role="button">保存</button>
+
+
+</div>
+
+<script src="/component/js/jquery-3.3.1.min.js"></script>
+<script src="/component/js/moment.min.js"></script>
+<script src="/component/js/popper.min.js"></script>
+<script src="/component/js/bootstrap.min.js"></script>
+<script src="/component/js/treeview.min.js"></script>
+<script src="/js/cmm.js"></script>
+
+<script>
+    var loader = $("#loader");
+    var error_alert = $("#error_alert");
+
+    function show_alert(alert_text) {
+        $("#head_line").hide();
+        loader.hide();
+        error_alert.text(alert_text);
+        error_alert.show();
+    }
+
+    $(document).ready(function () {
+        $('#menu_tree').treeview({
+            data: getTree(),
+            onNodeSelected : function(event, data) {
+                getMapfromUrl(data);
+            }
+        })
+    });
+
+    $(document).ready(function () {
+        $("#add_environment_detail").click(function () {
+            $("#error_alert").hide();
+            var environment_form = $("#environment_form");
+            var environment_info_form = '<div class="input-group"  id="">' +
+                '                <div class="input-group-prepend">' +
+                '                    <span class="input-group-text">域名-IP</span>' +
+                '                </div>' +
+                '                <input name="server_domain" type="text" class="form-control" value="" placeholder="域名">' +
+                '                <input name="server_ip" class="form-control" value="" placeholder="目标IP">' +
+                '                <button name="delete_environment_line_info" class="btn btn-info btn-sm" role="button" style="width: 40px" value="">-</button>' +
+                '            </div>';
+            environment_form.append(environment_info_form);
+        })
+    });
+
+    $(document).ready(function () {
+        $("#save_environment").click(function () {
+            var input_list = $("#environment_form").find('.input-group');
+            loader.show();
+            $.ajax({
+                type: "post",
+                url: "/environment/line/modify",
+                data:JSON.stringify({
+                    id: $("#add_environment_detail").val(),
+                    environment_name: $("#environment_name").val()
+                }),
+                contentType:"application/json; charset=utf-8",
+                dataType: 'json',
+                success: function (response) {
+                    if (!response.success) {
+                        show_alert(response.error)
+                    } else {
+                        $.each(input_list, function (i, input_selector) {
+                            var args = {
+                                id: input_selector.id,
+                                url: $(this).find('[name="server_domain"]').val(),
+                                map_ip: $(this).find('[name="server_ip"]').val(),
+                                environment_id: $("#add_environment_detail").val(),
+                            };
+                            var url = "/environment/line_info/modify";
+                            if (!input_selector.id || input_selector.id == "") {
+                                url = "/environment/line_info/add";
+                                delete args['id'];
+                            }
+                            $.ajax({
+                                type: "post",
+                                url: url,
+                                data:JSON.stringify(args),
+                                contentType:"application/json; charset=utf-8",
+                                dataType: 'json',
+                                success: function (response) {
+                                    if (!response.success) {
+                                        show_alert(response.error)
+                                    }
+                                }
+                            })
+                        });
+                        loader.hide();
+                        $("#environment_form").empty();
+                        sleep(1.5);
+                        get_environment_detail();
+                    }
+                }
+            });
+
+        });
+
+        //删除host映射
+        $("#environment_form").on('click', 'button',function () {
+            if (!$(this).val() || $(this).val() == "") {
+                $(this).parent('.input-group').remove()
+            }else {
+                $.ajax({
+                    type: "post",
+                    url: "/environment/line_info/delete",
+                    data:JSON.stringify({
+                        id: $(this).val(),
+                    }),
+                    contentType:"application/json; charset=utf-8",
+                    dataType: 'json',
+                    success: function (response) {
+                        if (!response.success) {
+                            show_alert('删除失败:' + response.error)
+                        } else {
+                            $("#environment_form").empty();
+                            get_environment_detail();
+                        }
+                    }
+                })
+            }
+        })
+    });
+
+    $(document).ready(function () {
+        get_environment_detail();
+    });
+
+    function get_environment_detail() {
+        var para_dict = new URLSearchParams(window.location.search);
+        var environment_id = para_dict.get('id');
+        $("#add_environment_detail").val(environment_id);
+        $("#error_alert").hide();
+        $.ajax({
+            type: 'post',
+            url: '/environment/line/detail',
+            data: JSON.stringify({
+                id: environment_id
+            }),
+            contentType: "application/json; charset=utf-8",
+            dataType: "json",
+            success: function(response) {
+                if (!response.success) {
+                    show_alert('获取数据失败')
+                } else {
+                    var environment_line_detail = response.res;
+                    var environment_name = environment_line_detail[0].environment_name;
+                    $("#environment_name").val(environment_name);
+
+                    $.ajax({
+                        type: 'post',
+                        url: '/environment/line_info/detail',
+                        data: JSON.stringify({
+                            environment_id: environment_id,
+                        }),
+                        contentType: "application/json; charset=utf-8",
+                        dataType: "json",
+                        success: function (response) {
+                            loader.hide();
+                            if (!response.success) {
+                                show_alert('获取数据失败')
+                            } else if (response.res.length > 0){
+                                var environment_info_list = response.res;
+                                var environment_form = $("#environment_form");
+                                var environment_info_form = "";
+                                $.each(environment_info_list, function (i, environment_info) {
+                                    environment_info_form += '<div class="input-group"  id="'+ environment_info.id +'">' +
+                                        '                <div class="input-group-prepend">' +
+                                        '                    <span class="input-group-text">域名-IP</span>' +
+                                        '                </div>' +
+                                        '                <input name="server_domain" type="text" class="form-control" value="'+ environment_info.url +'" placeholder="域名">' +
+                                        '                <input name="server_ip" class="form-control" value="'+ environment_info.map_ip +'" placeholder="目标IP">' +
+                                        '                <button name="delete_environment_line_info" type="button" class="btn btn-info btn-sm" role="button" style="width: 40px" value="'+ environment_info.id +'">－</button>' +
+                                        '            </div>'
+                                });
+                                environment_form.append(environment_info_form);
+                            } else {
+                                show_alert('无相关数据，请按‘+’添加，并保存')
+                            }
+                        }
+                    })
+                }
+            }
+        })
+    }
+</script>
+
+</body>
+</html>

@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>自动化巡检测试系统-邮件管理</title>
+
+    <link href="/component/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/css/main.css" rel="stylesheet">
+    <link href="/css/loader.css" rel="stylesheet">
+    <link href="/component/css/treeview.min.css" rel="stylesheet">
+</head>
+<body>
+<div id="wrapper">
+    <div id="sidebar-wrapper">
+        <ul class="sidebar-nav">
+            <li class="sidebar-brand"><a href="/">自动巡检测试系统</a></li>
+            <li id="menu_tree"></li>
+        </ul>
+    </div>
+    <div id="email-wrapper" style="margin-left: 10px">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="/email/manage">邮箱管理</a></li>
+                <li class="breadcrumb-item active" aria-current="page">详情</li>
+            </ol>
+        </nav>
+        <button id="add_email_account" class="btn btn-primary btn-sm" role="button" style="margin-bottom: 20px;">新增</button>
+
+        <div id="loader_use"></div>
+        <div id="error_alert" class="alert alert-danger" role="alert"></div>
+
+        <table class="table" id="email_table" >
+            <thead>
+            <tr>
+                <th scope="col">#</th>
+                <th scope="col">用户名</th>
+                <th scope="col">邮箱地址</th>
+                <th scope="col">创建时间</th>
+                <th scope="col">操作</th>
+            </tr>
+            </thead>
+            <tbody>
+            </tbody>
+        </table>
+        <form id="email_form" class="detail_form" style="display: none">
+            <div class="form-group">
+                <input type="text" class="form-control" id="email_name" style="width: 60%" placeholder="用户名" value="">
+                <input type="email" id="email_account" style="width: 60%" placeholder="邮箱地址" value="">
+            </div>
+            <button id="save_email_account" class="btn btn-primary btn-sm" type="button" style="margin-bottom: 20px;">保存</button>
+        </form>
+
+        <!--删除确认-->
+        <div class="modal fade" id="delete_confirm" tabindex="-1" role="dialog" aria-hidden="true">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">删除邮箱</h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <p>确认要删除吗？</p>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">取消</button>
+                        <button type="button" class="btn btn-danger" data-dismiss="modal" name="delete-email-confirm-btn" value="">确认删除</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!--关联FT弹出框-->
+        <div class="modal fade" id="registered_confirm" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel"
+             aria-hidden="true">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="exampleModalLabel">关联FT</h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <input type="text" id="function_search" onkeyup="functionSearch()" placeholder="搜索">
+                        <!--所有接口列表-->
+                        <ul class="list-group" id="functionUL" style="max-height: 300px; overflow-y:scroll;"></ul>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" name="cancel_add_function" class="btn btn-secondary" data-dismiss="modal">取消</button>
+                        <button type="button" name="confirm_add_function" class="btn btn-primary" data-dismiss="modal">确定</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!--关联FT弹出框-->
+        <div class="modal fade" id="disregistered_confirm" tabindex="-1" role="dialog" aria-labelledby="disregisterModalLabel"
+             aria-hidden="true">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="disregisterModalLabel">解关联FT</h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <ul class="list-group" id="disregisterUL" style="max-height: 300px; overflow-y:scroll;"></ul>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" name="cancel_disregister_function" class="btn btn-secondary" data-dismiss="modal">取消</button>
+                        <button type="button" name="confirm_del_function" class="btn btn-primary" data-dismiss="modal">确定</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!--关联批次弹出框-->
+        <div class="modal fade" id="add_batch" tabindex="-1" role="dialog" aria-labelledby="batchModalLabel"
+             aria-hidden="true">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="batchModalLabel">关联批次</h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <input type="text" id="batchSearch" onkeyup="batchSearch()" placeholder="搜索">
+                        <ul class="list-group" id="addBatchUL" style="max-height: 300px; overflow-y:scroll;"></ul>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" name="cancel_add_batch" class="btn btn-secondary" data-dismiss="modal">取消</button>
+                        <button type="button" name="confirm_add_batch" class="btn btn-primary" data-dismiss="modal">确定</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!--关联FT弹出框-->
+        <div class="modal fade" id="delete_batch" tabindex="-1" role="dialog" aria-labelledby="delBatchModalLabel"
+             aria-hidden="true">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="delBatchModalLabel">解除批次</h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <ul class="list-group" id="delBatchUL" style="max-height: 300px; overflow-y:scroll;"></ul>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" name="cancel_del_batch" class="btn btn-secondary" data-dismiss="modal">取消</button>
+                        <button type="button" name="confirm_del_batch" class="btn btn-primary" data-dismiss="modal">确定</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="/component/js/jquery-3.3.1.min.js"></script>
+<script src="/component/js/moment.min.js"></script>
+<script src="/component/js/popper.min.js"></script>
+<script src="/component/js/bootstrap.min.js"></script>
+<script src="/component/js/treeview.min.js"></script>
+<script src="/js/cmm.js"></script>
+
+
+<script>
+    let loader = $("#loader");
+    let error_alert = $("#error_alert");
+    let $lasttext="";
+    let $emailTABLE = $('#email_table');
+
+
+    function show_alert(alert_text) {
+        loader.hide();
+        error_alert.text(alert_text);
+        error_alert.show();
+    }
+
+    $(document).ready(function () {
+        $('#menu_tree').treeview({
+            data: getTree(),
+            onNodeSelected : function(event, data) {
+                getMapfromUrl(data);
+            }
+        })
+    });
+
+
+    $(document).ready(function () {
+        $("#add_email_account").click(function () {
+            $("#error_alert").hide();
+            $("#add_email_account").hide();
+            $emailTABLE.hide();
+            $("#email_form").show()
+        });
+
+        //提交新增环境信息
+        $("#save_email_account").click(function () {
+            var email_name = $("#email_name").val();
+            var email_address = $("#email_account").val();
+            $.ajax({
+                type: 'post',
+                url: '/email/account/add',
+                data: JSON.stringify({
+                    email_name: email_name,
+                    email_address: email_address
+                }),
+                contentType: "application/json; charset:utf-8",
+                dataType: 'json',
+                success: function (response) {
+                    if (!response.success) {
+                        show_alert("添加失败：" + response.error);
+                        $("#email_form").hide()
+                    } else {
+                        window.location.href = "/email/manage"
+                    }
+                }
+            })
+        })
+    });
+
+    //
+    $(document).ready(function () {
+        $emailTABLE.on('click', 'button', function () {
+            var this_value = Number($(this).val());
+            var delete_button = $('button[name="delete-email-confirm-btn"]');
+            delete_button.val(this_value);
+            let click_name = this.name;
+            if (click_name === 'registered_function' || click_name === 'disregistered_function') {
+                $('#registered_confirm').val(this_value);
+                $.ajax({
+                    type: 'post',
+                    url: '/email/relation/get_function',
+                    data: JSON.stringify({
+                        email_id: this_value
+                    }),
+                    contentType: "application/json; charset=utf-8",
+                    dataType: "json",
+                    success: function (response) {
+                        if (!response.success) {
+                            show_alert("操作失败")
+                        } else {
+                            let function_ids = response.res;
+                            loader.show();
+                            $.ajax({
+                                type: 'post',
+                                url: '/menu_tree/function_line/info',
+                                data: JSON.stringify({}),
+                                contentType: "application/json; charset=utf-8",
+                                dataType: "json",
+                                success: function (response) {
+                                    if (!response.success) {
+                                        show_alert('获取数据失败');
+                                    } else if (click_name === 'registered_function') {
+                                        let function_list = response.res;
+                                        $("#functionUL").empty();
+                                        console.log(11111, function_list)
+                                        $.each(function_list, function (i, ft) {
+                                            console.log(22222222, ft)
+                                            if ($.inArray(ft.function_line_id, function_ids) === -1) {
+                                                $("#functionUL").append('<li data-value="' + ft.function_line_id + '" class="list-group-item">'+ft.business_name +'->'+ ft.system_name + '->' + ft.function_name + '</li>')
+                                            }
+                                        });
+                                        loader.hide();
+                                    } else if (click_name === 'disregistered_function') {
+                                        $('#disregistered_confirm').val(this_value);
+                                        $("#disregisterUL").empty();
+                                        let function_list = response.res;
+                                        if (function_ids.length <= 0) {
+                                            $("#disregisterUL").append('<li data-value="0" class="list-group-item" style="color: red;">没有关联的FT</li>');
+                                        } else {
+                                            $.each(function_list, function (i, ft) {
+                                                if (!($.inArray(ft.function_line_id, function_ids) === -1)) {
+                                                    $("#disregisterUL").append('<li data-value="' + ft.function_line_id + '" class="list-group-item">'+ft.business_name +'->'+ ft.system_name + '->' + ft.function_name + '</li>')
+                                                }
+                                            });
+                                        }
+                                    }
+                                }
+                            })
+                        }
+                    }
+                })
+            } else if (click_name === 'add_batch' || click_name === 'del_batch') {
+                $.ajax({
+                    type: 'post',
+                    url: '/email/relation/get_batch',
+                    data: JSON.stringify({
+                        email_id: this_value
+                    }),
+                    contentType: "application/json; charset=utf-8",
+                    dataType: "json",
+                    success: function (response) {
+                        if (!response.success) {
+                            show_alert("查询批次失败")
+                        } else {
+                            let relation_batchs = response.res;
+                            $.ajax({
+                                type: 'post',
+                                url: '/batch/all',
+                                data: JSON.stringify({
+
+                                }),
+                                dataType: 'json',
+                                contentType: "application/json; charset=utf-8",
+                                success: function (response) {
+                                    let batch_list = response.res;
+                                    if (!response.success) {
+
+                                    } else if (click_name === 'add_batch'){
+                                        $('#add_batch').val(this_value);
+                                        $("#addBatchUL").empty();
+                                        $.each(batch_list, function (i, batch) {
+                                            if ($.inArray(batch.id, relation_batchs) === -1) {
+                                                $("#addBatchUL").append('<li data-value="' + batch.id + '" class="list-group-item">' + batch.batch_name + '</li>')
+                                            }
+                                        });
+                                    } else {
+                                        $('#delete_batch').val(this_value);
+                                        $("#delBatchUL").empty();
+                                        $.each(batch_list, function (i, batch) {
+                                            if (!($.inArray(batch.id, relation_batchs) === -1)) {
+                                                $("#delBatchUL").append('<li data-value="' + batch.id + '" class="list-group-item">' + batch.batch_name + '</li>')
+                                            }
+                                        });
+                                    }
+
+                                }
+                            })
+                        }
+
+                    }
+                })
+
+            }
+        })
+    });
+
+    // 确认删除
+    $(document).ready(function () {
+        $('button[name="delete-email-confirm-btn"]').click(function () {
+            var email_id = $(this).val();
+            $.ajax({
+                type: 'post',
+                url: '/email/account/delete',
+                data: JSON.stringify({
+                    id: email_id
+                }),
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                success: function (response) {
+                    loader.hide();
+                    if (!response.success) {
+                        show_alert('删除邮箱失败')
+                    } else {
+                        window.location.href = '/email/manage'
+                    }
+                }
+            })
+        })
+    });
+
+    $(document).ready(function () {
+        $.ajax({
+            type: 'post',
+            url: '/email/account/info',
+            data: JSON.stringify({}),
+            contentType: "application/json; charset=utf-8",
+            dataType: "json",
+            success: function (response) {
+                loader.hide();
+                $emailTABLE.hide();
+                if (!response.success) {
+                    show_alert('获取数据失败:' + response.error)
+                }  else if (response.res.length <=0) {
+                    show_alert('没有添加相关的email信息')
+                } else {
+                    $emailTABLE.show();
+                    $("#email_form").hide();
+                    var email_info_list = response.res;
+                    var row_class = ['odd', 'even'];
+                    $.each(email_info_list, function (i, email_info) {
+                        var create_time = moment(email_info.create_time).format( "YYYY/MM/DD HH:mm");
+
+                        var button_col = '<div class="btn-group btn-group-sm" role="group">' +
+                            '<button name="delete_email_account" type="button" class="btn btn-info btn-secondary delete-button" value="' + email_info.id + '" data-toggle="modal" data-target="#delete_confirm">删除</button>'+
+                            '<button name="registered_function" type="registered_function_button" class="btn btn-info btn-secondary registered_function-button" value="' + email_info.id + '" data-toggle="modal" data-target="#registered_confirm">关联</button>' +
+                            '<button name="disregistered_function" type="disregistered_function_button" class="btn btn-info btn-secondary disregistered_function-button" value="' + email_info.id + '" data-toggle="modal" data-target="#disregistered_confirm">解关联</button>' +
+                            '<button name="add_batch" type="add_batch_button" class="btn btn-info btn-secondary add_batch_button" value="' + email_info.id + '"  data-toggle="modal" data-target="#add_batch">关联批次</button>' +
+                            '<button name="del_batch" type="del_batch_button" class="btn btn-info btn-secondary del_batch_button" value="' + email_info.id + '"  data-toggle="modal" data-target="#delete_batch">解除批次</button>';
+                        $("#email_table").find('tbody')
+                            .append('<tr>' +
+                                '<th scope="row" class="'+ row_class[i%2] +'">' + (i + 1) + '</th>' +
+                                '<td data-cell=2 ><div contenteditable>' + email_info.email_name + '</div></td>' +
+                                '<td data-cell=3 ><div contenteditable type="email">' + email_info.email_address + '</div></td>' +
+                                '<td>' + create_time + '</td>' +
+                                '<td>' + button_col + '</td></tr>')
+                    })
+                }
+            }
+        })
+    });
+    $emailTABLE.on("focus", 'td', function () {
+        $lasttext = this.innerText;
+    });
+    $emailTABLE.on("blur","td",function(){
+        if(!(this.innerText === $lasttext)) {
+            let change = this.innerText.split('\n')[0];
+            var data = new Map();
+            if($(this).data("cell") === 2) {
+                data['email_name'] = change
+            } else if ($(this).data("cell") === 3) {
+                data['email_address'] = change
+            } else {
+                return
+            }
+            data['email_id'] = Number($(this).closest("tr").find("button[name='delete_email_account']").val());
+            $.ajax({
+                type: 'post',
+                url: '/email/account/update',
+                data: JSON.stringify(data),
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                success: function (response) {
+                    if (!response.success) {
+                        show_alert("更新失败")
+                    } else {
+                        console.log("success")
+                    }
+                }
+            })
+
+        }
+    });
+
+    // 添加列表搜索功能
+    function functionSearch() {
+        let input, filter, ul, li, item, i;
+        input = document.getElementById('function_search');
+        filter = input.value.toUpperCase();
+        ul = document.getElementById('functionUL');
+        li = ul.getElementsByTagName('li');
+
+        for (i = 0; i < li.length; i++) {
+            item = li[i];
+            if (item.innerHTML.toUpperCase().indexOf(filter) > -1) {
+                item.style.display = "";
+            } else {
+                if (!item.classList.contains('active')) {
+                    item.style.display = "none";
+                }
+            }
+        }
+    }
+
+    // 添加列表搜索功能
+    function batchSearch() {
+        let input, filter, ul, li, item, i;
+        input = document.getElementById('batchSearch');
+        filter = input.value.toUpperCase();
+        ul = document.getElementById('addBatchUL');
+        li = ul.getElementsByTagName('li');
+
+        for (i = 0; i < li.length; i++) {
+            item = li[i];
+            if (item.innerHTML.toUpperCase().indexOf(filter) > -1) {
+                item.style.display = "";
+            } else {
+                if (!item.classList.contains('active')) {
+                    item.style.display = "none";
+                }
+            }
+        }
+    }
+
+    // 添加列表点击选中功能
+    $(document).ready(function () {
+        let ul = $("ul");
+        ul.on('click', 'li', function () {
+            if(!$(this).hasClass("active")) {
+                $(this).addClass('active');
+            } else {
+                $(this).removeClass('active');
+            }
+        })
+    });
+
+    $(document).ready(function () {
+        $('button[name="cancel_add_function"]').click(function () {
+            var selected_function_list = $("#functionUL").find('.active');
+            $.each(selected_function_list, function (i, selected_function) {
+                $(selected_function).removeClass("active");
+            })
+        })
+    });
+
+    $(document).ready(function () {
+        $('button[name="confirm_add_function"]').click(function () {
+            let selected_function_list = $("#functionUL").find('.active');
+            let email_id = $('#registered_confirm').val();
+            let function_ids = [];
+            $.each(selected_function_list, function (i, selected_function) {
+                function_ids.push($(selected_function).data('value'))
+            });
+            loader.show();
+            $.ajax({
+                type: 'post',
+                url: '/email/relation/add',
+                data: JSON.stringify({
+                    email_id: email_id,
+                    function_id: function_ids
+                }),
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                success: function (response) {
+                    if (!response.success) {
+                        show_alert("操作失败")
+                    } else {
+                        loader.hide();
+                        window.location.href = '/email/manage'
+                    }
+                }
+            })
+        })
+    });
+
+    $(document).ready(function () {
+        $('button[name="confirm_del_function"]').click(function () {
+            let selected_function_list = $("#disregisterUL").find('.active');
+            let email_id = $('#disregistered_confirm').val();
+            let function_ids = [];
+            $.each(selected_function_list, function (i, selected_function) {
+                function_ids.push($(selected_function).data('value'))
+            });
+            loader.show();
+            $.ajax({
+                type: 'post',
+                url: '/email/relation/delete',
+                data: JSON.stringify({
+                    email_id: email_id,
+                    function_id: function_ids
+                }),
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                success: function (response) {
+                    if (!response.success) {
+                        show_alert("操作失败")
+                    } else {
+                        loader.hide();
+                        window.location.href = '/email/manage'
+                    }
+                }
+            })
+        })
+    });
+
+    $(document).ready(function () {
+        $('button[name="confirm_add_batch"]').click(function () {
+            let selected_batch_list = $("#addBatchUL").find('.active');
+            let email_id = $('#add_batch').val();
+            let batch_ids = [];
+            $.each(selected_batch_list, function (i, selected_batch) {
+                batch_ids.push($(selected_batch).data('value'))
+            });
+            loader.show();
+            $.ajax({
+                type: 'post',
+                url: '/email/relation/batch/add',
+                data: JSON.stringify({
+                    email_id: email_id,
+                    batch_ids: batch_ids
+                }),
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                success: function (response) {
+                    if (!response.success) {
+                        show_alert("操作失败")
+                    } else {
+                        loader.hide();
+                        window.location.href = '/email/manage'
+                    }
+                }
+            })
+        })
+    });
+
+    $(document).ready(function () {
+        $('button[name="confirm_del_batch"]').click(function () {
+            let selected_batch_list = $("#delBatchUL").find('.active');
+            let email_id = $('#delete_batch').val();
+            let batch_ids = [];
+            $.each(selected_batch_list, function (i, selected_batch) {
+                batch_ids.push($(selected_batch).data('value'))
+            });
+            loader.show();
+            $.ajax({
+                type: 'post',
+                url: '/email/relation/batch/delete',
+                data: JSON.stringify({
+                    email_id: email_id,
+                    batch_ids: batch_ids
+                }),
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                success: function (response) {
+                    if (!response.success) {
+                        show_alert("操作失败")
+                    } else {
+                        loader.hide();
+                        window.location.href = '/email/manage'
+                    }
+                }
+            })
+        })
+    });
+</script>
+
+
+
+</body>
+</html>

@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <title>自动化巡检测试系统-批次日志</title>
+
+    <link href="/component/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/component/css/treeview.min.css" rel="stylesheet">
+    <link href="/css/main.css" rel="stylesheet">
+    <link href="/css/loader.css" rel="stylesheet">
+    <link href="/component/css/jquery.datetimepicker.min.css" rel="stylesheet">
+
+</head>
+
+<body>
+<div id="wrapper">
+    <div id="sidebar-wrapper">
+        <ul class="sidebar-nav">
+            <li class="sidebar-brand"><a href="/">自动巡检测试系统</a></li>
+            <li id="menu_tree"></li>
+
+        </ul>
+    </div>
+
+    <div id="page-content-wrapper">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item active" aria-current="page">批次运行日志</li>
+            </ol>
+        </nav>
+        <div class="datetimepicker">
+            <input id="datetimepicker_start" placeholder="开始" type="text" value="">
+            <input id="datetimepicker_end" placeholder="结束" type="text" value=""></label>
+            <button id="data-select" class="btn btn-info" style="margin-top: -10px">搜索</button>
+        </div>
+
+        <div id="loader"></div>
+        <div id="error_alert" class="alert alert-danger" role="alert"></div>
+
+        <table class="table" id="batch_run_log_table">
+            <thead>
+            <tr>
+                <th scope="col">#</th>
+                <th scope="col">批次名称</th>
+                <th scope="col">测试通过率(%)</th>
+                <th scope="col">开始时间</th>
+                <th scope="col">结束时间</th>
+                <th scope="col">耗时</th>
+                <th scope="col">操作</th>
+            </tr>
+            </thead>
+            <tbody>
+            </tbody>
+        </table>
+
+        <nav aria-label="Page navigation">
+            <ul class="pagination">
+                <li class="page-item" id="previous_page"><a class="page-link" href="#">上一页</a></li>
+                <li class="page-item" id="next_page"><a class="page-link" href="#">下一页</a></li>
+                <input id="input_page" value=""/>
+                <button id="jump_page" class="btn btn-primary btn-sm" style="height: 35px"  data-page_num="" data-time_url="">跳转</button>
+            </ul>
+        </nav>
+
+    </div>
+</div>
+
+<script src="/component/js/jquery-3.3.1.min.js"></script>
+<script src="/component/js/popper.min.js"></script>
+<script src="/component/js/bootstrap.min.js"></script>
+<script src="/component/js/treeview.min.js"></script>
+<script src="/component/js/moment.min.js"></script>
+<script src="/component/js/jquery.datetimepicker.full.min.js"></script>
+<script src="/js/cmm.js"></script>
+
+<script>
+    var error_alert = $("#error_alert");
+    var loader = $("#loader");
+    var page_size = 30;
+
+    function show_alert(alert_text) {
+        loader.hide();
+        error_alert.text(alert_text);
+        error_alert.show();
+    }
+    $(document).ready(function () {
+        $("#data-select").click(function () {
+            from_time = $("#datetimepicker_start").val();
+            to_time = $("#datetimepicker_end").val();
+            window.location.href = "/batch_run_log/1?from_time="+ from_time + "&to_time=" + to_time
+        });
+        var time_string = new URLSearchParams(window.location.search);
+        var from_time = time_string.get('from_time');
+        var to_time = time_string.get('to_time');
+        var time_url = '';
+        if (from_time){
+            time_url = "?from_time="+ from_time;
+            from_time += ':00.000'
+        }
+        if (to_time){
+            time_url += "&to_time=" + to_time;
+            to_time += ':00.000'
+        }
+        if (!from_time && !to_time) {
+            from_time = moment().format('YYYY-MM-DD 00:00:00.000');
+            to_time = moment().add(5, "minute").format('YYYY-MM-DD HH:mm:00.000');
+        }
+        $.ajax({
+            type: 'post',
+            url: '/run_log/batch/count',
+            data: JSON.stringify({
+                'from_time': from_time,
+                'to_time': to_time,
+            }),
+            contentType: 'application/json; charset=utf-8',
+            dataType: 'json',
+            success: function (response) {
+                if (!response.success) {
+                    show_alert('获取批次日志失败！');
+                } else if (response.res == 0) {
+                    show_alert('今日（指定时间段）无日志数据，请确认指定日期数据是否存在！');
+                    $(".pagination").hide()
+                } else {
+                    var total_batch_run_log = response.res;
+                    var curr_url = window.location.pathname;
+                    var page_num = Number(curr_url.split("/").pop());
+                    var total_page = Number(Math.ceil(total_batch_run_log / page_size));
+                    if (page_num > total_page || page_num <= 0 || isNaN(page_num)) {
+                        show_alert("无此页数据");
+                    } else {
+                        var previous_page = $('li[id="previous_page"]');
+                        var next_page = $('li[id="next_page"]');
+                        if (total_page == 1) {
+                            previous_page.addClass('disabled');
+                            next_page.addClass('disabled')
+                        }
+                        else if (page_num == 1) {
+                            previous_page.addClass('disabled');
+                            next_page.find('.page-link').attr('href', "/batch_run_log/"+(Number(page_num) + 1)+ time_url)
+                        } else if (page_num == total_page) {
+                            next_page.addClass('disabled');
+                            previous_page.find('.page-link').attr('href', "/batch_run_log/"+(Number(page_num) - 1)+time_url)
+                        } else {
+                            next_page.find('.page-link').attr('href', "/batch_run_log/"+(Number(page_num) + 1)+time_url);
+                            previous_page.find('.page-link').attr('href', "/batch_run_log/"+(Number(page_num) - 1)+time_url)
+                        }
+                        var page_item_string = '';
+                        var pre_page_item_string = '';
+                        var after_page_item_string = '';
+                        for (var i = 1; i <= total_page; i++) {
+                            if (i == page_num) {
+                                page_item_string += '<li class="page-item active"><a class="page-link" href="/batch_run_log/'+Number(i) + 1+ time_url+ '">' + i + '</a></li>'
+                            } else if (i>page_num && i-page_num >3){
+                                pre_page_item_string = '<li class="page-item"><a class="page-link" href="/batch_run_log/'+ (Number(page_num) + 4) +time_url+'">...</a></li>'
+                            } else if ( i < page_num && page_num - i >3 ){
+                                after_page_item_string = '<li class="page-item"><a class="page-link" href="/batch_run_log/'+ (Number(page_num) - 4) +time_url+'">...</a></li>'
+                            } else {
+                                page_item_string += '<li class="page-item"><a class="page-link" href="/batch_run_log/'+ i + time_url + '">' + i + '</a></li>'
+                            }
+                        }
+                        if (pre_page_item_string){
+                            page_item_string = page_item_string + pre_page_item_string
+                        }
+                        if (after_page_item_string){
+                            page_item_string = after_page_item_string + page_item_string
+                        }
+                        if (page_num == 1) {
+                            var first_page_string = '<li class="page-item disabled" id="first_page"><a class="page-link" href="/batch_run_log/1' + time_url+'">首页</a></li>';
+                            if (page_num == total_page) {
+                                var last_page_string = '<li class="page-item disabled" id="last_page"><a class="page-link" href="/batch_run_log/'+total_page+ time_url+'">尾页</a></li>'
+                            }
+                            else {
+                                var last_page_string = '<li class="page-item" id="last_page"><a class="page-link" href="/batch_run_log/'+total_page+ time_url +'">尾页</a></li>'
+                            }
+                        }else if (page_num == total_page){
+                            var first_page_string = '<li class="page-item" id="first_page"><a class="page-link" href="/batch_run_log/1'+ time_url+'">首页</a></li>';
+                            var last_page_string = '<li class="page-item disabled" id="last_page"><a class="page-link" href="/batch_run_log/' + total_page + time_url + '">尾页</a></li>'
+                        }else {
+                            var first_page_string = '<li class="page-item" id="first_page"><a class="page-link" href="/batch_run_log/1'+ time_url+'">首页</a></li>';
+                            var last_page_string = '<li class="page-item" id="last_page"><a class="page-link" href="/batch_run_log/'+total_page+ time_url +'">尾页</a></li>'
+                        }
+                        var total_page_string = '<p class="page-data" data-page-text="">第'+page_num+'页/共'+ total_page +'页</p>';
+                        previous_page.before(first_page_string);
+                        previous_page.after(page_item_string);
+                        next_page.after(total_page_string);
+                        next_page.after(last_page_string);
+                        $('#jump_page').attr('data-page_num', total_page);
+                        $('#jump_page').attr('data-time_url', time_url);
+                        $.ajax({
+                            type: 'post',
+                            url: '/run_log/batch/info',
+                            data: JSON.stringify({
+                                'pageSize': page_size,
+                                'pageIndex': page_num,
+                                'from_time': from_time,
+                                'to_time': to_time
+                            }),
+                            contentType: 'application/json; charset=utf-8',
+                            dataType: 'json',
+                            success: function (response) {
+                                if (!response.success) {
+                                    show_alert('获取数据失败')
+                                } else {
+                                    loader.hide();
+                                    $("#batch_run_log_table").show();
+                                    var batch_run_log_list = response.res;
+                                    $.each(batch_run_log_list, function (i, batch_run_log) {
+                                        var start_time = batch_run_log.start_time;
+                                        var end_time = batch_run_log.end_time;
+                                        var button_col = '<div class="btn-group btn-group-sm" role="group">' +
+                                            '<a class="btn btn-info" href="/batch_run_log/detail/' + batch_run_log.id +'/1?from_time='+ start_time.substring(0, 16) +
+                                            '&name='+batch_run_log.batch_name+'" role="button">详情</a></button>';
+                                        if (!start_time) {
+                                            start_time = "";
+                                        } else {
+                                            start_time = start_time.substring(0, 23);
+                                        }
+                                        if (!batch_run_log.end_time) {
+                                            end_time = '';
+                                        } else {
+                                            end_time = batch_run_log.end_time.substring(0, 23);
+                                        }
+                                        var cost_time = batch_run_log.cost_time;
+                                        if (!cost_time){
+                                            cost_time = 0
+                                        }
+                                        var str_batch_pass_rate = batch_run_log.pass_rate;
+                                        if (str_batch_pass_rate > 80) {
+                                            str_batch_pass_rate = '<td style="color: green; font-weight: bold;">' + str_batch_pass_rate +'</td>'
+                                        } else {
+                                            if (str_batch_pass_rate == -1 && cost_time==0){
+                                                str_batch_pass_rate = '<td style="color: red;">未结束</td>'
+                                            }
+                                            else {
+                                                str_batch_pass_rate = '<td style="color: red; front-weight:bold">'+str_batch_pass_rate+'</td>'
+                                            }
+
+                                        }
+                                        $("#batch_run_log_table").find('tbody').append('<tr>' +
+                                            '<th scope="row">' + (page_size * (page_num - 1) + i + 1) + '</th>' +
+                                            '<td>' + batch_run_log.batch_name + '</td>' +
+                                            str_batch_pass_rate +
+                                            '<td>' + start_time + '</td>' +
+                                            '<td>' + end_time + '</td>' +
+                                            '<td>' + cost_time + '</td>' +
+                                            '<td>' + button_col + '</td></tr>')
+                                    });
+                                }
+                            }
+                        })
+                    }
+                }
+            }
+        })
+    });
+
+    jQuery('#datetimepicker_start').datetimepicker({
+        format:'Y-m-d H:i',
+    });
+    jQuery('#datetimepicker_end').datetimepicker({
+        format:'Y-m-d H:i',
+    });
+
+    $(document).ready(function () {
+        var tree_data = getTree();
+        tree_data[4]['nodes'] = [
+            {
+                text: "用例运行日志",
+                tags: ['available'],
+                color: "#8f9baa",
+                backColor: "transparent",
+                href: "/use_case_run_log/1",
+                state:{
+                    expanded:true
+                },
+            },
+            {
+                text: "批次运行日志",
+                tags: ['available'],
+                color: "#ffffff",
+                backColor: "transparent",
+                href: "/batch_run_log/1",
+                state:{
+                    expanded:true
+                },
+            }
+        ];
+        $('#menu_tree').treeview({
+            data: tree_data,
+            onNodeSelected: function (event, data) {
+                $('#menu_tree').treeview('collapseAll', {silent: true});
+                if (data.text != '运行日志' && data.levels==1) {
+                    $('#menu_tree').treeview('collapseNode', [data.nodeId, {silent: true}]);
+                    getMapfromUrl(data);
+                } else if (data.state.selected) {
+                    getMapfromUrl(data);
+                }
+            }
+        });
+    })
+
+</script>
+
+</body>
+</html>

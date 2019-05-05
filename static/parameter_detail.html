@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <title>自动化巡检测试系统-参数详情</title>
+
+    <link href="/component/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/component/css/treeview.min.css" rel="stylesheet">
+    <link href="/css/main.css" rel="stylesheet">
+    <link href="/css/loader.css" rel="stylesheet">
+
+</head>
+
+<body>
+<div id="wrapper">
+    <div id="sidebar-wrapper">
+        <ul class="sidebar-nav">
+            <li class="sidebar-brand"><a href="/">自动巡检测试系统</a></li>
+            <li id="menu_tree"></li>
+        </ul>
+    </div>
+
+    <div id="page-content-wrapper">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="/parameter/1">参数管理</a></li>
+                <li class="breadcrumb-item active" aria-current="page">参数</li>
+            </ol>
+        </nav>
+        <HR>
+
+        <div id="loader"></div>
+        <div id="error_alert" class="alert alert-danger" role="alert"></div>
+
+        <form id="parameter_form" class="detail_form">
+            <div class="form-group">
+                <label for="parameter_id" style="display: none;">参数id</label>
+                <input style="display: none;" type="text" class="form-control" id="parameter_id" placeholder="" readonly>
+            </div>
+            <div class="form-group">
+                <label for="parameter_name">参数名称</label>
+                <input type="text" class="form-control" id="parameter_name" placeholder="参数名(英文&数字)" value="">
+            </div>
+            <div class="form-group">
+                <label for="parameter_value">参数值</label>
+                <input type="text" class="form-control" id="parameter_value" placeholder="参数值" value="">
+            </div>
+        </form>
+        <button class="btn btn-primary detail_submit" id="submit_parameter">提交</button>
+    </div>
+</div>
+
+<script src="/component/js/jquery-3.3.1.min.js"></script>
+<script src="/component/js/treeview.min.js"></script>
+<script src="/component/js/popper.min.js"></script>
+<script src="/component/js/bootstrap.min.js"></script>
+<script src="/js/cmm.js"></script>
+
+<script>
+    var error_alert = $("#error_alert");
+    var loader = $("#loader");
+
+    function show_alert(alert_text){
+        loader.hide();
+        error_alert.text(alert_text);
+        error_alert.show();
+    }
+
+    $(document).ready(function () {
+        var parameter_id = window.location.pathname.split("/").pop();
+        if (parameter_id != 'new') {
+            $.ajax({
+                type: 'post',
+                url: '/parameter/info',
+                data: JSON.stringify({
+                    'id': parameter_id
+                }),
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                success: function (response) {
+                    loader.hide();
+                    if (!response.success) {
+                        show_alert("获取数据失败");
+                    } else {
+                        var parameter_detail = response.res[0];
+                        $("#parameter_id").attr("placeholder", parameter_detail.id);
+                        $("#parameter_name").val(parameter_detail.parameter_name);
+                        $("#parameter_value").val(parameter_detail.value);
+
+                        $("#parameter_form").show();
+                        $("#submit_parameter").html('更新');
+                        $("#submit_parameter").show();
+                    }
+                }
+            })
+        } else {
+            loader.hide();
+            $("#parameter_form").show();
+            $("#submit_parameter").html('新增');
+            $("#submit_parameter").show();
+        }
+    });
+
+    $(document).ready(function () {
+        $("#submit_parameter").click(function () {
+            var parameter_dict = {
+                'parameter_name': $("#parameter_name").val(),
+                'value': $("#parameter_value").val()
+            };
+            var parameter_id = $("#parameter_id").attr("placeholder");
+            if (!parameter_id) {
+                var url = '/parameter/add';
+                var data = JSON.stringify(parameter_dict)
+            } else {
+                var url = '/parameter/update';
+                parameter_dict.id = parameter_id;
+                var data = JSON.stringify(parameter_dict)
+            }
+            $.ajax({
+                type: 'post',
+                url: url,
+                data: data,
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                success: function (response) {
+                    if (!response.success) {
+                        show_alert("更新数据失败");
+                    } else {
+                        window.location.href = "/parameter/1";
+                    }
+                }
+            })
+        })
+    });
+
+    $('#menu_tree').treeview({
+            data: getTree(),
+            onNodeSelected: function (event, data) {
+                $('#menu_tree').treeview('collapseAll', {silent: true});
+                if (data.text != '参数管理') {
+                    $('#menu_tree').treeview('collapseNode', [data.nodeId, {silent: true}]);
+                    getMapfromUrl(data);
+                } else if (data.state.selected) {
+                    getMapfromUrl(data);
+                }
+            }
+        });
+</script>
+
+</body>
+</html>

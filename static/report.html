@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <title>自动化巡检测试系统-报表</title>
+    <link href="/component/css/jquery.dataTables.min.css" rel="stylesheet">
+    <link href="/component/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/component/css/treeview.min.css" rel="stylesheet">
+    <link href="/component/css/jquery.datetimepicker.min.css" rel="stylesheet">
+    <link href="/component/css/component-custom-switch.min.css" rel="stylesheet">
+    <link href="/css/main.css" rel="stylesheet">
+    <link href="/css/loader.css" rel="stylesheet">
+
+</head>
+
+<body>
+<div id="wrapper">
+    <div id="sidebar-wrapper">
+        <ul class="sidebar-nav">
+            <li class="sidebar-brand"><a href="/#">自动巡检测试系统</a></li>
+            <li id="menu_tree"></li>
+        </ul>
+    </div>
+
+    <div id="page-content-wrapper">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item active">
+                    <a href="/use_case/report">用例报表</a>
+                </li>
+            </ol>
+        </nav>
+        <div class="btn-group">
+            <button class="btn btn-primary btn-sm dropdown-toggle" type="button" id="report_type" data-toggle="dropdown" aria-haspopup="false" aria-expanded="false">
+                日报表
+            </button>
+            <div class="dropdown-menu">
+                <a id="minutes_report" class="dropdown-item">分报表</a>
+                <a id="day_report" class="dropdown-item">日报表</a>
+                <a id="week_report" class="dropdown-item">周报表</a>
+                <a id="month_report" class="dropdown-item">月报表</a>
+            </div>
+        </div>
+        <div id="show_type" class="btn-group btn-group-toggle btn-group-primary" data-toggle="buttons" style="float:right;">
+            <label class="btn btn-outline-secondary btn-switch-on active">
+                <input type="radio" name="options" id="table" autocomplete="表格" checked="">表格
+            </label>
+            <label class="btn btn-outline-secondary btn-switch-off">
+                <input type="radio" name="options" id="chart" autocomplete="趋势图">趋势图
+            </label>
+        </div>
+        <div class="datetimepicker7">
+            <input id="datetimepicker_start" placeholder="开始" type="text" value="">
+            <input id="datetimepicker_end" placeholder="结束" type="text" value=""></label>
+            <button id="data-select" class="btn btn-primary" style="margin-top: -5px;height: 35px;">搜索</button>
+        </div>
+        <HR>
+
+        <div id="loader"></div>
+        <div id="error_alert" class="alert alert-danger" role="alert"></div>
+
+        <table class="table" id="report_table" style="width:95%;">
+            <thead>
+            <tr>
+                <th scope="col">业务线</th>
+                <th scope="col">系统线</th>
+                <th scope="col">功能模块</th>
+                <th scope="col">运行次数</th>
+                <th scope="col">失败次数</th>
+                <th scope="col">成功率(%)</th>
+                <th scope="col">平均时长(s)</th>
+                <th scope="col">最大时长(s)</th>
+                <th scope="col">日期(s)</th>
+            </tr>
+            </thead>
+
+        </table>
+        <div id="report_chart" style="width:80%">
+            <canvas id="canvas"></canvas>
+        </div>
+
+    </div>.
+
+</div>
+
+<script src="/component/js/jquery-3.3.1.min.js"></script>
+<script src="/component/js/jquery.dataTables.min.js"></script>
+<script src="/component/js/jquery.datetimepicker.full.min.js"></script>
+<script src="/component/js/popper.min.js"></script>
+<script src="/component/js/bootstrap.min.js"></script>
+<script src="/component/js/moment.min.js"></script>
+<script src="/component/js/treeview.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.7.2/Chart.bundle.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.7.2/Chart.min.js"></script>
+<script src="/js/cmm.js"></script>
+
+<script>
+    var error_alert = $("#error_alert");
+    var loader = $("#loader");
+    var table_selector = $("#report_table");
+    var wageSummaryTable;
+    var datetimepicker = $('.datetimepicker');
+    var report_type = $("#report_type");
+    var datetimepicker_start = $("#datetimepicker_start");
+    var datetimepicker_end = $("#datetimepicker_end");
+    var MINUTES = 20;
+
+    function show_alert(alert_text) {
+        loader.hide();
+        datetimepicker.hide();
+        table_selector.hide();
+        error_alert.text(alert_text);
+        error_alert.show();
+    }
+    function clear_datetime(){
+        datetimepicker_start.val(null);
+        datetimepicker_end.val(null);
+    }
+
+    $(document).ready(function () {
+        $('#menu_tree').treeview({
+            data: getTree(),
+            onNodeSelected : function(event, data) {
+                getMapfromUrl(data);
+            }
+        })
+    });
+    function show_report_table_info(url='/report/day_report/info', from_time=null, to_time=null, function_id=null) {
+        var datatable = [];
+        error_alert.hide();
+        $("#report_table").show();
+        $("#report_table_wrapper").show();
+        loader.show();
+        datetimepicker.show();
+        $("#report_chart").hide();
+        wageSummaryTable = $('#report_table').dataTable({
+            ajax: {
+                url: url,
+                type: 'post',
+                dataType : "json",
+                contentType: "application/json;charset:utf-8",
+                data: function() {
+                    return JSON.stringify({
+                        from_time: from_time,
+                        to_time: to_time,
+                        function_id: function_id
+                    });
+                },
+                dataSrc: function (response) {
+                    var report_list = response.res;
+                    if (!report_list || report_list.length <=0) {
+                        show_alert('没有日志报表数据');
+                        $("#report_table_wrapper").hide();
+                    } else {
+                        $.each(report_list, function (i, report_info) {
+                            datatable.push(
+                                [
+                                    report_info.business_name,
+                                    report_info.system_name,
+                                    report_info.function_name,
+                                    report_info.run_count,
+                                    report_info.fail_count,
+                                    (report_info.pass_rate * 100).toPrecision(3),
+                                    report_info.average_time.toFixed(3),
+                                    report_info.max_time.toFixed(3),
+                                    report_info.create_time
+                                ]
+                            );
+                        })
+                    }
+                    for ( var i=0, ien=report_list.length ; i<ien ; i++ ) {
+                        var function_id = report_list[i].function_id;
+                        var from_time = report_list[i].create_time;
+                        from_time = moment.utc(from_time).format('YYYY-MM-DD 00:00');
+                        var to_time = from_time;
+                        if (url === '/report/minutes_report/info') {
+                            from_time = moment.utc(datatable[i][8]).subtract(MINUTES, 'minute').format("YYYY-MM-DD HH:mm");
+                            to_time = moment.utc(datatable[i][8]).format("YYYY-MM-DD HH:mm");
+                            datatable[i][8] = moment.utc(datatable[i][8]).format("YYYY-MM-DD HH:mm");
+                            var href = '/use_case_run_log/1?from_time='+ from_time + '&to_time=' + to_time +'&function_id=' + function_id + '&auto_run=' + true  ;
+                            if (report_list[i].fail_count > 0) {
+                                datatable[i][4] = '<a style="color:red;text-decoration:underline;" href="' + href + '&is_pass=' + 0 +'">' +
+                                    report_list[i].fail_count+'</a>';
+                            } else {
+                                datatable[i][4] = '<a class="run_fail" style="color:black;">'+report_list[i].fail_count+'</a>';
+                            }
+                            datatable[i][2] = '<a style="color:black;" href="' + href +'">' + report_list[i].function_name+'</a>';
+                        }else if (url === '/report/day_report/info') {
+                            from_time = moment.utc(to_time).format('YYYY-MM-DD 00:00');
+                            to_time = moment.utc(to_time).add(1, "days").format('YYYY-MM-DD 00:00');
+                            datatable[i][8] = moment.utc(datatable[i][8]).format("YYYY-MM-DD");
+                            href = '/use_case_run_log/1?from_time='+ from_time + '&to_time=' + to_time +'&function_id=' + function_id + '&auto_run=' + true;
+                            if (report_list[i].fail_count > 0) {
+                                datatable[i][4] = '<a style="color:red;text-decoration:underline;" href="' + href + '&is_pass=' + 0 +'">' +
+                                    report_list[i].fail_count+'</a>';
+                            } else {
+                                datatable[i][4] = '<a class="run_fail" style="color:black;">'+report_list[i].fail_count+'</a>';
+                            }
+                            datatable[i][2] = '<a style="color:black;" href="' + href + '">' +
+                                report_list[i].function_name+'</a>';
+                        } else {
+                            if (url === '/report/week_report/info') {
+                                from_time = moment.utc(to_time).subtract(1, "weeks").format('YYYY-MM-DD 00:00');
+                                datatable[i][8] = moment.utc(datatable[i][8]).format("YYYY") + '第'+ moment(datatable[i][8]).format("W") + '周';
+                            } else {
+                                from_time = moment.utc(to_time).subtract(1, "months").format('YYYY-MM-DD 00:00');
+                                datatable[i][8] = moment.utc(datatable[i][8]).format("YYYY-MM");
+                            }
+                            if (report_list[i].fail_count > 0) {
+                                datatable[i][4] = '<div class="run_fail" style="color:red;text-decoration:underline;"' +
+                                    ' data-from_time="'+ from_time +'" data-to_time="'+ to_time +'" data-function_id="'+ function_id +'">' +
+                                    report_list[i].fail_count+'</div>';
+                            } else {
+                                datatable[i][4] = '<div class="run_fail" style="color:black;">'+report_list[i].fail_count+'</div>';
+                            }
+                        }
+                    }
+                    return datatable
+                },
+                // error:function(){
+                //     alert('服务器无响应或数据异常，请联系管理员!');
+                // }
+
+            },
+            lengthMenu: [15, 30, 50, 100],
+            language: language_cn,
+            order: [[ 8, "desc" ]]
+
+        });
+        loader.hide()
+    }
+
+    $(document).ready(function () {
+        show_report_table_info();
+    });
+
+    $('#minutes_report').on('click', function () {
+        $('#datetimepicker_start').datetimepicker({
+            timepicker:false,
+            format:'Y-m-d',
+        });
+        $('#datetimepicker_end').datetimepicker({
+            format:'Y-m-d',
+            timepicker:false,
+        });
+        report_type.text(this.text);
+        var click_id = $("#show_type").find('.active').find('input').attr('id');
+        if (click_id === 'table') {
+            wageSummaryTable.fnClearTable();
+            wageSummaryTable.fnDestroy();
+            show_report_table_info('/report/minutes_report/info');
+        } else {
+            get_report_data('/report/minutes_report/info');
+        }
+        report_type.data('url', '/report/minutes_report/info');
+        clear_datetime()
+    });
+
+    $('#day_report').on('click', function () {
+        $('#datetimepicker_start').datetimepicker({
+            timepicker:false,
+            format:'Y-m-d',
+        });
+        $('#datetimepicker_end').datetimepicker({
+            format:'Y-m-d',
+            timepicker:false,
+        });
+        report_type.text(this.text);
+        var click_id = $("#show_type").find('.active').find('input').attr('id');
+        if (click_id === 'table') {
+            wageSummaryTable.fnClearTable();
+            wageSummaryTable.fnDestroy();
+            show_report_table_info('/report/day_report/info');
+        } else {
+            get_report_data('/report/day_report/info');
+        }
+        report_type.data('url', '/report/day_report/info');
+        clear_datetime()
+    });
+    $('#week_report').on('click', function () {
+        $('#datetimepicker_start').datetimepicker({
+            timepicker:false,
+            format:'Y-m-d',
+        });
+        $('#datetimepicker_end').datetimepicker({
+            format:'Y-m-d',
+            timepicker:false,
+        });
+        report_type.text(this.text);
+
+        var click_id = $("#show_type").find('.active').find('input').attr('id');
+        if (click_id === 'table') {
+            wageSummaryTable.fnClearTable();
+            wageSummaryTable.fnDestroy();
+            show_report_table_info('/report/week_report/info');
+        } else {
+            get_report_data('/report/week_report/info')
+        }
+        report_type.data('url', '/report/week_report/info');
+        clear_datetime()
+    });
+    $('#month_report').on('click', function () {
+        $('#datetimepicker_start').datetimepicker({
+            timepicker:false,
+            format:'Y-m-d',
+        });
+        $('#datetimepicker_end').datetimepicker({
+            format:'Y-m-d',
+            timepicker:false,
+        });
+        report_type.text(this.text);
+        var click_id = $("#show_type").find('.active').find('input').attr('id');
+        if (click_id === 'table') {
+            wageSummaryTable.fnClearTable();
+            wageSummaryTable.fnDestroy();
+            show_report_table_info('/report/month_report/info');
+        } else {
+            get_report_data('/report/month_report/info')
+        }
+        report_type.data('url', '/report/month_report/info');
+        clear_datetime()
+    });
+    $('#data-select').on('click', function () {
+        var url = report_type.data('url');
+        var from_time = $("#datetimepicker_start").val();
+        var to_time = $("#datetimepicker_end").val();
+        var click_id = $("#show_type").find('.active').find('input').attr('id');
+        if (click_id === 'table') {
+            wageSummaryTable.fnClearTable();
+            wageSummaryTable.fnDestroy();
+            show_report_table_info(url, from_time, to_time)
+        } else {
+            get_report_data(url, from_time, to_time)
+        }
+
+    });
+
+    $('#datetimepicker_start').datetimepicker({
+        timepicker:false,
+        format:'Y-m-d',
+    });
+    $('#datetimepicker_end').datetimepicker({
+        format:'Y-m-d',
+        timepicker:false,
+    });
+    $('#report_table').on('click', '.run_fail', function () {
+        var from_time = $(this).data('from_time');
+        var to_time = $(this).data('to_time');
+        var function_id = $(this).data('function_id');
+        var url = '/report/day_report/info';
+        from_time = moment(from_time).format('YYYY-MM-DD');
+        to_time = moment(to_time).format('YYYY-MM-DD');
+        var click_id = $("#show_type").find('.active').find('input').attr('id');
+        if (click_id === 'table') {
+            wageSummaryTable.fnClearTable();
+            wageSummaryTable.fnDestroy();
+            show_report_table_info(url, from_time, to_time, function_id)
+        } else {
+            get_report_data(url, from_time, to_time, function_id)
+        }
+    });
+
+    $("#show_type").on('click','label', function () {
+        var from_time = $(this).data('from_time');
+        var to_time = $(this).data('to_time');
+        var function_id = $(this).data('function_id');
+        var click_id = $(this).find('input').attr('id');
+        var url = report_type.data('url');
+        if (click_id === 'table') {
+            wageSummaryTable.fnClearTable();
+            wageSummaryTable.fnDestroy();
+            show_report_table_info(url);
+        } else {
+            if (!url || url === '/report/day_report/info') {
+                url = '/report/day_report/info';
+                get_report_data(url, from_time, to_time, function_id);
+            } else {
+                get_report_data(url,  from_time, to_time, function_id);
+            }
+
+        }
+    });
+
+    function get_report_data(url,from_time=null, to_time=null, function_id=null) {
+        $("#report_chart").show();
+        error_alert.hide();
+        $("#report_chart").empty();
+        $("#report_chart").append('<canvas id="canvas"></canvas>');
+        $.ajax({
+            type: 'post',
+            url:url,
+            data: JSON.stringify({
+                from_time: from_time,
+                to_time: to_time,
+                function_id: function_id,
+                data_type: 1
+            }),
+            contentType:'application/json;charset:utf-8',
+            dataType:'json',
+            success: function (response) {
+                if (!response.success) {
+                    show_alert("获取数据失败")
+                } else {
+                    $("#report_table_wrapper").hide();
+                    var chartist_data = response.res;
+                    if (chartist_data.data && chartist_data.data.datasets && chartist_data.data.datasets.length > 0) {
+                        for ( var i=0; i < chartist_data.data.datasets.length; i++) {
+                            if (ColorData.length > i) {
+                                var color = ColorData[i];
+                            } else {
+                                color = getRandomColor()
+                            }
+                            chartist_data.data.datasets[i].borderColor= color;
+                            chartist_data.data.datasets[i].backgroundColor= color;
+                            chartist_data.data.datasets[i].fill= false;
+                            for (var j=0; j < chartist_data.data.datasets[i].data.length; j++) {
+                                if (chartist_data.data.datasets[i].data[j] < 0) {
+                                    chartist_data.data.datasets[i].data[j] = null
+                                } else {
+                                    chartist_data.data.datasets[i].data[j] = chartist_data.data.datasets[i].data[j].toFixed(3)
+                                }
+                            }
+                        }
+                    } else {
+                        show_alert("数据为空")
+                    }
+                    var ctx = document.getElementById('canvas').getContext('2d');
+                    new Chart(ctx, chartist_data)
+                }
+            }
+        })
+    }
+
+
+</script>
+
+</body>
+</html>

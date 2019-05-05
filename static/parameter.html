@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <title>自动化巡检测试系统-参数管理</title>
+
+    <link href="/component/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/component/css/treeview.min.css" rel="stylesheet">
+    <link href="/css/main.css" rel="stylesheet">
+    <link href="/css/loader.css" rel="stylesheet">
+
+</head>
+
+<body>
+<div id="wrapper">
+    <div id="sidebar-wrapper">
+        <ul class="sidebar-nav">
+            <li class="sidebar-brand"><a href="/">自动巡检测试系统</a></li>
+            <li id="menu_tree"></li>
+        </ul>
+    </div>
+
+    <div id="page-content-wrapper">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item active" aria-current="page">参数管理</li>
+            </ol>
+        </nav>
+
+        <a class="btn btn-primary btn-sm" href="/parameter_detail/new" role="button" style="margin-bottom: 20px;">新增</a>
+
+        <div id="loader"></div>
+        <div id="error_alert" class="alert alert-danger" role="alert"></div>
+
+        <table class="table" id="parameter_table">
+            <thead>
+            <tr>
+                <th scope="col">#</th>
+                <th scope="col">参数名称</th>
+                <th scope="col">参数值</th>
+                <th scope="col">创建人</th>
+                <th scope="col">创建时间</th>
+                <th scope="col">更新时间</th>
+                <th scope="col">操作</th>
+            </tr>
+            </thead>
+            <tbody>
+            </tbody>
+        </table>
+
+        <nav aria-label="Page navigation">
+            <ul class="pagination">
+                <li class="page-item" id="previous_page"><a class="page-link" href="#">上一页</a></li>
+                <li class="page-item" id="next_page"><a class="page-link" href="#">下一页</a></li>
+                <input id="input_page" value=""/>
+                <button id="jump_page" class="btn btn-primary btn-sm" style="height: 35px"  data-page_num="" data-time_url="">跳转</button>
+            </ul>
+        </nav>
+
+        <div class="modal fade" id="delete_confirm" tabindex="-1" role="dialog" aria-hidden="true">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">删除参数</h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <p>确认要删除吗？</p>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">取消</button>
+                        <button type="button" class="btn btn-danger" name="delete-confirm-btn" value="">确认删除</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script src="/component/js/jquery-3.3.1.min.js"></script>
+<script src="/component/js/popper.min.js"></script>
+<script src="/component/js/bootstrap.min.js"></script>
+<script src="/component/js/treeview.min.js"></script>
+<script src="/component/js/moment.min.js"></script>
+<script src="/js/cmm.js"></script>
+
+<script>
+    var error_alert = $("#error_alert");
+    var loader = $("#loader");
+
+    function show_alert(alert_text){
+        loader.hide();
+        error_alert.text(alert_text);
+        error_alert.show();
+    }
+
+    $(document).ready(function () {
+        $.ajax({
+            type: 'get',
+            url: '/parameter/count',
+            success: function (response) {
+                if (!response.success) {
+                    show_alert("获取参数失败");
+                } else if (response.res == 0) {
+                    show_alert("没有参数数据，请新增");
+                } else {
+                    var pageSize = 20;
+                    var total_param = response.res;
+                    var pathname = window.location.pathname;
+                    var page_num = window.location.pathname.split("/").pop();
+                    var total_page = Math.ceil(total_param / pageSize);
+                    if (page_num > total_page || page_num <= 0 || isNaN(page_num)) {
+                        show_alert("无此页数据");
+                    } else {
+                        var previous_page = $('li[id="previous_page"]');
+                        var next_page = $('li[id="next_page"]');
+                        if (total_page == 1) {
+                            previous_page.addClass('disabled');
+                            next_page.addClass('disabled')
+                         }
+                        else if (page_num == 1) {
+                            previous_page.addClass('disabled');
+                            next_page.find('.page-link').attr('href', '/parameter/' + (Number(page_num) + 1))
+                        } else if (page_num == total_page) {
+                            next_page.addClass('disabled');
+                            previous_page.find('.page-link').attr('href', '/parameter/' + (Number(page_num) - 1))
+                        } else {
+                            next_page.find('.page-link').attr('href', '/parameter/' + (Number(page_num) + 1));
+                            previous_page.find('.page-link').attr('href', '/parameter/' + (Number(page_num) - 1))
+                        }
+                        var page_item_string = '';
+                        var pre_page_item_string = '';
+                        var after_page_item_string = '';
+                        for (var i = 1; i <= total_page; i++) {
+                            if (i == page_num) {
+                                page_item_string += '<li class="page-item active"><a class="page-link" href="/parameter/' + i + '">' + i + '</a></li>'
+                            } else if (i>page_num && i-page_num >3){
+                                pre_page_item_string = '<li class="page-item"><a class="page-link" href="/parameter/'+(Number(page_num)+4)+'">...</a></li>';
+                            } else if ( i < page_num && page_num - i >3 ){
+                                after_page_item_string = '<li class="page-item"><a class="page-link" href="/parameter/'+(Number(page_num)-4)+'">...</a></li>'
+                            } else {
+                                page_item_string += '<li class="page-item"><a class="page-link" href="/parameter/' + i + '">' + i + '</a></li>'
+                            }
+                        }
+                        if (pre_page_item_string){
+                            page_item_string = page_item_string + pre_page_item_string
+                        }
+                        if (after_page_item_string){
+                            page_item_string = after_page_item_string + page_item_string
+                        }
+                        var first_page_disabled_str = '';
+                        var last_page_disabled_str = '';
+                        if (page_num == 1) {
+                            first_page_disabled_str = 'disabled';
+                            if (page_num == total_page) {
+                                last_page_disabled_str = 'disabled'
+                            }
+                        }else if (page_num == total_page){
+                            last_page_disabled_str = 'disabled'
+                        }
+                        var first_page_string = '<li class="page-item '+ first_page_disabled_str +'" id="first_page"><a class="page-link" href="/parameter/1">首页</a></li>';
+                        var last_page_string = '<li class="page-item '+ last_page_disabled_str +'" id="last_page"><a class="page-link" href="/parameter/'+ total_page +'">尾页</a></li>';
+                        var data_page_string = '<p class="page-data">第'+page_num+'页/共'+ total_page +'页</p>';
+                        previous_page.before(first_page_string);
+                        previous_page.after(page_item_string);
+                        next_page.after(data_page_string);
+                        next_page.after(last_page_string);
+                        $('#jump_page').attr('data-page_num', total_page);
+                        $.ajax({
+                            type: 'post',
+                            url: '/parameter/info',
+                            data: JSON.stringify({
+                                'pageSize': pageSize,
+                                'pageIndex': page_num
+                            }),
+                            contentType: "application/json; charset=utf-8",
+                            dataType: "json",
+                            success: function (response) {
+                                loader.hide();
+                                if (!response.success) {
+                                    show_alert("获取数据失败");
+                                } else {
+                                    $("#parameter_table").show();
+                                    var parameter_list = response.res;
+                                    $.each(parameter_list, function (i, parameter) {
+                                        var button_col = '<div class="btn-group btn-group-sm" role="group">' +
+                                            '<a class="btn btn-info" href="/parameter_detail/' + parameter.id + '" role="button">详情</a>' +
+                                            '<button type="button" class="btn btn-info btn-secondary delete-button" value="' + parameter.id + '" data-toggle="modal" data-target="#delete_confirm">删除</button>';
+                                        $("#parameter_table").find('tbody')
+                                            .append('<tr>' +
+                                                '<th scope="row">' + (pageSize * (page_num - 1 ) + i + 1) + '</th>' +
+                                                '<td>' + parameter.parameter_name + '</td>' +
+                                                '<td>' + parameter.value + '</td>' +
+                                                '<td>' + parameter.create_by + '</td>' +
+                                                '<td>' + moment(parameter.create_time).format("YYYY/MM/DD HH:mm") + '</td>' +
+                                                '<td>' + moment(parameter.update_time).format("YYYY/MM/DD HH:mm") + '</td>' +
+                                                '<td>' + button_col + '</td></tr>')
+                                    });
+                                }
+                            }
+                        });
+                    }
+                }
+            }
+        })
+    });
+
+    $(document).ready(function () {
+        $("#parameter_table").on('click', '.delete-button', function () {
+            var to_delete = $(this).val();
+            var delete_button = $('button[name="delete-confirm-btn"]');
+            delete_button.val(to_delete)
+        })
+    });
+
+    $(document).ready(function () {
+        $('button[name="delete-confirm-btn"]').click(function () {
+            var id_to_delete = $(this).val();
+            $.ajax({
+                type: 'post',
+                url: '/parameter/delete',
+                data: JSON.stringify({
+                    'id': id_to_delete
+                }),
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                success: function (response) {
+                    if (!response.success) {
+                        show_alert("删除参数失败");
+                    } else {
+                        window.location.href = '/parameter/1'
+                    }
+                }
+            })
+        })
+    });
+
+    $(document).ready(function () {
+        $('#menu_tree').treeview({
+            data: getTree(),
+            onNodeSelected: function (event, data) {
+                if (data.text != '参数管理'){
+                    $('#menu_tree').treeview('collapseNode', [data.nodeId, { silent: true }]);
+                    getMapfromUrl(data);
+                }else if(data.state.selected){
+                    getMapfromUrl(data);
+                }
+            }
+        });
+    })
+
+</script>
+
+</body>
+</html>

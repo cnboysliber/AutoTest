@@ -1,0 +1,218 @@
+body, button, input, select, textarea, h1, h2, h3, h4, h5, h6 {
+    font-family: "Segoe UI", "Lucida Grande", Helvetica, Arial, "Microsoft YaHei", FreeSans, Arimo, "Droid Sans", "wenquanyi micro hei", "Hiragino Sans GB", "Hiragino Sans GB W3", FontAwesome, sans-serif;
+}
+
+body {
+    overflow-x: hidden;
+}
+
+#wrapper {
+    padding-left: 250px;
+}
+
+#sidebar-wrapper {
+    z-index: 1000;
+    position: fixed;
+    left: 250px;
+    width: 250px;
+    height: 100%;
+    margin-left: -250px;
+    overflow-y: auto;
+    background: #262f3b;
+}
+
+#page-content-wrapper {
+    width: 100%;
+    position: absolute;
+    padding: 15px;
+    margin-right: -250px;
+    height: 100vh;
+}
+
+/* Sidebar Styles */
+.sidebar-nav {
+    position: absolute;
+    top: 0;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.sidebar-nav li {
+    text-indent: 20px;
+    line-height: 20px;
+    white-space: nowrap;
+}
+.sidebar-nav ul {
+    width:fit-content;
+    min-width: 100%;
+}
+
+.sidebar-nav li a {
+    display: block;
+    text-decoration: none;
+    color: #8f9baa;
+}
+
+.sidebar-nav li a:hover {
+    text-decoration: none;
+    color: #fff;
+    background: #405063;
+}
+
+.sidebar-nav li a:active, .sidebar-nav li a:focus {
+    text-decoration: none;
+}
+
+.sidebar-nav > .sidebar-brand {
+    height: 40px;
+    font-size: 20px;
+    line-height: 20px;
+    margin-top: 20px;
+}
+
+.sidebar-nav > .sidebar-brand a {
+    color: #fff;
+}
+
+.sidebar-nav > .sidebar-brand a:hover {
+    color: #fff;
+    background: none;
+}
+
+@media (min-width: 768px) {
+    #wrapper {
+        padding-left: 250px;
+    }
+
+    #sidebar-wrapper {
+        width: 250px;
+    }
+
+    #page-content-wrapper {
+        padding: 20px;
+        position: relative;
+        margin-right: 0;
+        height: 100vh;
+    }
+}
+
+.table {
+    display: none;
+    width: 98%;
+}
+
+#fetch_fail_alert {
+    display: none;
+}
+
+/*#error_alert {*/
+    /*display: none;*/
+/*}*/
+
+#parameter_form {
+    display: none;
+}
+
+#submit_parameter {
+    display: none;
+}
+
+.detail_form {
+    margin-left: 25%;
+    margin-right: 25%;
+}
+
+.detail_submit {
+    margin-left: 25%;
+    margin-bottom: 20px;
+}
+
+#use_case_interface_list {
+    margin-left: 25%;
+    margin-right: 25%;
+    height: 70%;
+}
+
+.alert {
+    display: none;
+    margin-left: 25%;
+    margin-right: 25%;
+}
+
+.param_form {
+    margin-left: 5%;
+    margin-right: 5%;
+}
+
+#submit_param {
+    margin-left: 5%;
+}
+
+#batch_use_case_list {
+    margin: 0 25%;
+}
+#input_page{
+    width: 5%;
+    min-width: 50px;
+    height: 35px;
+}
+.page-data{
+    margin-top: 0.6%;
+}
+#environment-wrapper{
+    margin-left:280px;
+}
+.input-text{
+    width:97%;
+    position: relative;
+    height: 40px;
+    top: -40px;
+    border: 1px solid #ced4da;
+    border-radius:.25rem;
+    padding:.375rem .75rem;
+    font-size:1rem;
+    color:#495057;
+}
+.select{
+    width:100%;
+    height: 40px;
+    border: 1px solid #ced4da;
+    border-radius:.25rem;
+}
+.input-select{
+    height: 90px;
+}
+.param_input{
+    width: 60%;
+}
+.eval_input{
+    width: 60%;
+}
+.run_fail{
+    cursor:pointer;
+}
+tr pre, div pre {
+    white-space: pre-wrap;
+    white-space: -moz-pre-wrap;
+    white-space: -o-pre-wrap;
+    word-wrap: break-word;
+    font-size: 1rem;
+    font-weight: 400;
+    line-height: 1.5;
+    color: #212529;
+    text-align: left;
+    background-color: #fff;
+    font-family:"Segoe UI", "Lucida Grande", Helvetica, Arial, "Microsoft YaHei", FreeSans, Arimo, "Droid Sans", "wenquanyi micro hei", "Hiragino Sans GB", "Hiragino Sans GB W3", FontAwesome, sans-serif;
+}
+select[name="interface_delay"] {
+    background: #17a2b8;border-color:#17a2b8;color:white
+}
+.run_log_use_case_name {
+    font-size: 1rem;
+    font-weight: 400;
+    line-height: 1.5;
+    color: #212529;
+    text-align: left;
+}

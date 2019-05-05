@@ -1,0 +1,1 @@
+/data/virtualenv/AutoTestEnv/bin/uwsgi --reload ./log/uwsgi9091.pid

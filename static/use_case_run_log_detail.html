@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="utf8">
+
+<head>
+    <title>自动化巡检测试系统-用例日志详情</title>
+
+    <link href="/component/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/component/css/treeview.min.css" rel="stylesheet">
+    <link href="/css/main.css" rel="stylesheet">
+    <link href="/css/loader.css" rel="stylesheet">
+
+</head>
+
+<body>
+<div id="wrapper">
+    <div id="sidebar-wrapper">
+        <ul class="sidebar-nav">
+            <li class="sidebar-brand"><a href="/">自动巡检测试系统</a></li>
+            <li id="menu_tree"></li>
+        </ul>
+    </div>
+
+    <div id="page-content-wrapper">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item active" aria-current="page">用例运行详情</li>
+            </ol>
+        </nav>
+
+        <div id="loader"></div>
+        <div id="error_alert" class="alert alert-danger" role="alert"></div>
+
+
+        <table class="table" id="interface_run_log_table">
+            <thead>
+            <tr>
+                <th scope="col">#</th>
+                <th scope="col">接口名称</th>
+                <th scope="col">测试通过</th>
+                <th scope="col">开始时间</th>
+                <th scope="col">耗时(s)</th>
+                <th scope="col">响应码</th>
+                <th scope="col">返回值</th>
+            </tr>
+            </thead>
+            <tbody>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script src="/component/js/jquery-3.3.1.min.js"></script>
+<script src="/component/js/treeview.min.js"></script>
+<script src="/component/js/popper.min.js"></script>
+<script src="/component/js/bootstrap.min.js"></script>
+<script src="/component/js/moment.min.js"></script>
+<script src="/js/cmm.js"></script>
+
+<script>
+    function escapeHtml(string) {
+        var entityMap = {
+            "&": "&amp;",
+            "<": "&lt;",
+            ">": "&gt;",
+            '"': '&quot;',
+            "'": '&#39;',
+            "/": '&#x2F;'
+        };
+        return String(string).replace(/[&<>"'\/]/g, function (s) {
+            return entityMap[s];
+        });
+    }
+
+
+    var error_alert = $("#error_alert");
+    var loader = $("#loader");
+
+    function show_alert(alert_text){
+        loader.hide();
+        error_alert.text(alert_text);
+        error_alert.show();
+    }
+    $(document).ready(function() {
+        var time_string = new URLSearchParams(window.location.search);
+        var pathname = window.location.pathname.split("/");
+        var use_case_run_log_id = pathname.pop();
+        var from_time = time_string.get('from_time');
+        var to_time = time_string.get('to_time');
+        let use_case_name = time_string.get('name');
+        $('#page-content-wrapper .breadcrumb-item').text(use_case_name);
+        if (from_time){
+            from_time += ':00.000'
+        }
+        if (to_time){
+            to_time += ':00.000'
+        }
+        $.ajax({
+            type: 'post',
+            url: '/run_log/interface/info',
+            data: JSON.stringify({
+                'from_time': from_time,
+                'to_time': to_time,
+                'use_case_run_log_id': use_case_run_log_id
+            }),
+            contentType: "application/json; charset=utf-8",
+            dataType: "json",
+            success: function (response) {
+                if (!response.success) {
+                    show_alert("获取用例接口运行日志失败");
+                }else {
+                    loader.hide();
+                    var interface_run_log_list = response.res;
+                    $("#interface_run_log_table").show();
+                    if (!interface_run_log_list){
+                        show_alert("无接口运行日志，请确认用例是否运行")
+                    }
+                    $.each(interface_run_log_list, function (i, interface_run_log) {
+                        var r_json_paload = interface_run_log.r_payload;
+                        try{
+                            r_json_paload = syntaxHighlight(JSON.parse(r_json_paload));
+                        }
+                        catch(e) {
+                        }
+                        if (r_json_paload.indexOf('<!DOCTYPE html>') > -1) {
+                            var str_res =
+                            '<p><b>请求包头: </b>' + interface_run_log.s_header + '</p>' +
+                            '<p><b>请求消息体:</b></p><pre>' + syntaxHighlight(interface_run_log.s_payload) + '</pre>'+
+                            '<p><b>返回状态码: </b>' + interface_run_log.r_code + '</p>' +
+                            '<p><b>返回包头: </b>' + interface_run_log.r_header + '</p>' +
+                            '<p style="height: 5px;margin-top: -5px"><b>返回页面:</b>' + escapeHtml(r_json_paload) + '</p>';
+                        } else {
+                            str_res =
+                            '<p><b>请求包头: </b>' + interface_run_log.s_header + '</p>' +
+                            '<p><b>请求消息体:</b></p><pre>' + syntaxHighlight(interface_run_log.s_payload) + '</pre>'+
+                            '<p><b>返回状态码: </b>' + interface_run_log.r_code + '</p>' +
+                            '<p><b>返回包头: </b>' + interface_run_log.r_header + '</p>' +
+                            '<p style="height: 5px;margin-top: -5px"><b>返回消息体:</b><pre>' + r_json_paload + '</pre></p>';
+                        }
+
+                        if (interface_run_log.error_message){
+                             str_res = '<p style="color: red;">错误信息: "' + interface_run_log.error_message + '</p>' + str_res
+                        }
+                        var start_time = interface_run_log.start_time.substring(0, 23);
+                        if (!start_time){
+                            start_time = ''
+                        }else {
+                            start_time = moment(start_time).format('YYYY-MM-DD HH:mm:ss.SSS')
+                        }
+                        var is_pass = interface_run_log.is_pass;
+                        if (!is_pass){
+                            is_pass = '<td style="color: red; font-weight: bold;">否</td>'
+                        }else {
+                            is_pass = '<td>是</td>'
+                        }
+                        // str_res = str_res.replace('iframe', '');
+                        // str_res = str_res.replace('style=\\"width:100%\\">', '');
+                        var button_col = '<button class="btn btn-sm btn-primary" data-value="open" type="button" data-json="' + escapeHtml(str_res) +'">...</button>';
+
+                        $("#interface_run_log_table").find("tbody").
+                        append('<tr>' +
+                            '<th scope="row">'+Number(i+1) +'</th>'+
+                            '<td>' + interface_run_log.interface_name + '</td>'+
+                            is_pass +
+                            '<td>' + start_time + '</td>' +
+                            '<td>' + interface_run_log.cost_time + '</td>' +
+                            '<td>' + interface_run_log.r_code + '</td>' +
+                            '<td class="test">' + button_col + '</td></tr>'
+                        )
+                    });
+                }
+            }
+        });
+    });
+
+    $(document).ready(function () {
+        $("#interface_run_log_table").on('click', '.test', function () {
+            var button = $(this).find('button');
+            if (button.data('value') == 'open') {
+                button.closest('tr').after('<tr style="word-break:break-all;"><td colspan="7">' + button.data('json') + '</td></tr>');
+                button.data('value', 'close');
+            } else if (button.data('value') == 'close') {
+                button.closest('tr').next('tr').remove();
+                button.data('value', 'open');
+            }
+
+        })
+    });
+
+    $(document).ready(function () {
+        var tree_data = getTree();
+        tree_data[4]['nodes'] = [
+            {
+                text: "用例运行日志",
+                tags: ['available'],
+                color: "#ffffff",
+                backColor: "transparent",
+                href: "/use_case_run_log/1",
+                state:{
+                    expanded:true
+                }
+            },
+            {
+                text: "批次运行日志",
+                tags: ['available'],
+                color: "#8f9baa",
+                backColor: "transparent",
+                href: "/batch_run_log/1",
+                state:{
+                    expanded:true
+                }
+            }
+        ];
+        $('#menu_tree').treeview({
+            data: tree_data,
+            onNodeSelected: function (event, data) {
+                $('#menu_tree').treeview('collapseAll', {silent: true});
+                if (data.text != '批次管理') {
+                    $('#menu_tree').treeview('collapseNode', [data.nodeId, {silent: true}]);
+                    getMapfromUrl(data);
+                } else if (data.state.selected) {
+                    getMapfromUrl(data);
+                }
+            }
+        });
+    })
+</script>
+
+</body>
+</html>

@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>自动化巡检测试系统-接口详情</title>
+
+    <link href="/component/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/component/css/treeview.min.css" rel="stylesheet">
+    <link href="/css/main.css" rel="stylesheet">
+    <link href="/css/loader.css" rel="stylesheet">
+    <link href="/component/css/component-custom-switch.min.css" rel="stylesheet">
+
+</head>
+
+<body>
+<div id="wrapper">
+    <div id="sidebar-wrapper">
+        <ul class="sidebar-nav">
+            <li class="sidebar-brand"><a href="/">自动巡检测试系统</a></li>
+            <li id="menu_tree"></li>
+        </ul>
+    </div>
+
+    <div id="page-content-wrapper">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="/interface/1">接口管理</a></li>
+                <li class="breadcrumb-item active" aria-current="page">接口</li>
+            </ol>
+        </nav>
+        <HR>
+
+        <div id="loader"></div>
+        <div id="error_alert" class="alert alert-danger" role="alert"></div>
+
+        <form id="interface_form" class="detail_form">
+            <div class="form-group">
+                <label for="interface_id" style="display: none;">接口id</label>
+                <input style="display: none;" type="text" class="form-control" id="interface_id" placeholder=""
+                       readonly>
+            </div>
+            <div class="form-group">
+                <label for="interface_name">名称</label>
+                <input type="text" class="form-control" id="interface_name" placeholder="接口名称" value="">
+            </div>
+            <div class="form-group" style="display: none">
+                <label for="interface_entry">入口</label>
+                <input type="text" class="form-control" id="interface_entry" placeholder="接口入口" value="">
+            </div>
+            <div class="form-group">
+                <label for="interface_encryption">接口加密方式</label>
+                <select class="form-control" id="interface_encryption">
+                    <option value="0">不加密</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="interface_url">url</label>
+                <span class="badge badge-info" data-toggle="modal" data-target="#how_to_parameter">如何填写参数?</span>
+                <input type="text" class="form-control" id="interface_url" placeholder="接口url" value="">
+            </div>
+            <div class="form-group">
+                <label for="interface_method">请求方式(GET/POST)</label>
+                <select id="interface_method" class="form-control">
+                    <option value="GET">GET</option>
+                    <option value="POST">POST</option>
+                </select>
+                <!--<input type="text" class="form-control" id="interface_method" placeholder="接口请求方式(GET/POST等)" value="">-->
+            </div>
+            <div class="form-group">
+                <label for="interface_header">HTTP包头</label>
+                <span class="badge badge-info" data-toggle="modal" data-target="#how_to_parameter">如何填写参数?</span>
+                <!--<input type="text" class="form-control" id="interface_header" placeholder="接口HTTP包头" value="">-->
+                <textarea class="form-control" id="interface_header" placeholder="接口HTTP包头" rows="3"></textarea>
+            </div>
+            <div class="form-group">
+                <label for="interface_json_payload">消息体</label>
+                <div class="btn-group btn-group-toggle btn-group-pill" data-toggle="buttons">
+                    <label id="json" class="btn btn-sm btn-outline-primary btn-switch-on active">
+                        <input type="radio" name="options" autocomplete="off" checked=""> JSON
+                    </label>
+                    <label id="form" class="btn btn-sm btn-outline-primary btn-switch-off">
+                        <input type="radio" name="options" autocomplete="off"> FORM
+                    </label>
+                </div>
+                <span class="badge badge-info" data-toggle="modal" data-target="#how_to_parameter">如何填写参数?</span>
+                <!--<input type="text" class="form-control" id="interface_json_payload" placeholder="接口json内容" value="">-->
+                <textarea class="form-control" id="interface_json_payload" placeholder="接口json内容" rows="3"></textarea>
+            </div>
+        </form>
+        <button class="btn btn-primary detail_submit" id="submit_interface">提交</button>
+
+        <div class="modal fade" id="how_to_parameter" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel"
+             aria-hidden="true">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="exampleModalLabel">参数说明</h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <p>接口支持在URL/包头/json内容中自定义参数预留位，稍后在用例中可以为预留位指定参数值</p>
+                        <p>方法为：使用${}将需要预定义参数的地方包裹起来</p>
+                        <p>json例子:</p>
+                        <p>{
+                            "head":{
+                            "a": 1,
+                            "param1": ${param1}
+                            },
+                            "body": {
+                            "b": 2,
+                            "param2": ${param1}
+                            }
+                            }</p>
+                        <p>其中param1及param2为需要替换的预留参数位, 使用${param1}以及${param2}代替</p>
+                        <p>动态参数支持默认值设置，如上设置param1的默认值我们可以${param1==default}这样设置，default就是param1默认值</p>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="/component/js/jquery-3.3.1.min.js"></script>
+<script src="/component/js/treeview.min.js"></script>
+<script src="/component/js/popper.min.js"></script>
+<script src="/component/js/bootstrap.min.js"></script>
+<script src="/js/cmm.js"></script>
+
+<script>
+    var error_alert = $("#error_alert");
+    var loader = $("#loader");
+
+    function show_alert(alert_text) {
+        loader.hide();
+        error_alert.text(alert_text);
+        error_alert.show();
+    }
+
+    function get_interface_detail() {
+        $("#interface_encryption").empty();
+        $("#interface_encryption").append('<option value="0">不加密</option>');
+        $.ajax({
+            type: 'get',
+            url: '/encryption/list',
+            success: function (response) {
+                if (response.length > 0) {
+                    $.each(response, function (i, encryption) {
+                        $("#interface_encryption").append('<option value="' + encryption.id + '">' + encryption.encryption_name + '</option>')
+                    })
+                }
+                var interface_id = window.location.pathname.split('/').pop();
+                if (interface_id != 'new') {
+                    $.ajax({
+                        type: 'post',
+                        url: '/interface/info',
+                        data: JSON.stringify({
+                            'id': interface_id
+                        }),
+                        contentType: "application/json; charset=utf-8",
+                        dataType: "json",
+                        success: function (response) {
+                            loader.hide();
+                            if (!response.success) {
+                                show_alert('获取数据失败');
+                            } else {
+                                var interface_detail = response.res[0];
+                                $("#interface_id").attr('placeholder', interface_detail.id);
+                                $("#interface_name").val(interface_detail.interface_name);
+                                $("#interface_entry").val(interface_detail.interface_entry);
+                                $("#interface_url").val(interface_detail.interface_url);
+                                $("#interface_method").val(interface_detail.interface_method);
+                                $("#interface_header").val(interface_detail.interface_header);
+                                $("#interface_json_payload").val(interface_detail.interface_json_payload);
+                                if (interface_detail.interface_encryption != 0) {
+                                    var option_list = $("#interface_encryption").find('option');
+                                    $.each(option_list, function (i, option) {
+                                        if (option.value == interface_detail.interface_encryption) {
+                                            option.selected = true
+                                        }
+                                    })
+                                }
+                                if (interface_detail.interface_method) {
+                                    option_list = $("#interface_method").find('option');
+                                    $.each(option_list, function (i, option) {
+                                        if (option.value == interface_detail.interface_method.toUpperCase()) {
+                                            option.selected = true
+                                        }
+                                    })
+                                }
+
+
+                                if (interface_detail.body_type == 0) {
+                                    $("#form").removeClass('active');
+                                    $("#json").addClass('active');
+                                } else {
+                                    $("#json").removeClass('active');
+                                    $("#form").addClass('active');
+                                }
+                                $("#interface_form").show();
+                                $("#submit_interface").html('更新');
+                                $("#submit_interface").show();
+                            }
+                        }
+                    })
+                } else {
+                    loader.hide();
+                    $("#interface_form").show();
+                    $("#submit_interface").html('新增');
+                    $("#submit_interface").show();
+                }
+            }
+        });
+    }
+
+    // 获取接口数据并展示
+    $(document).ready(function () {
+        get_interface_detail()
+    });
+
+    // 提交接口更新
+    $(document).ready(function () {
+        $("#submit_interface").click(function () {
+            loader.show();
+            var body_type = 0;
+            if ($("#json").hasClass('active')) {
+                body_type = 0;
+            } else {
+                body_type = 1;
+            }
+            var interface_dict = {
+                'interface_name': $("#interface_name").val(),
+                'interface_entry': $("#interface_entry").val(),
+                'interface_encryption': $("#interface_encryption option:selected").val(),
+                'interface_url': $("#interface_url").val(),
+                'interface_method': $("#interface_method").val(),
+                'interface_header': $("#interface_header").val(),
+                'interface_json_payload': $("#interface_json_payload").val(),
+                'body_type': body_type
+            };
+            var interface_id = $("#interface_id").attr('placeholder');
+            if (!interface_id) {
+                var url = '/interface/add';
+                var data = JSON.stringify(interface_dict)
+            } else {
+                var url = '/interface/update';
+                interface_dict.id = interface_id;
+                var data = JSON.stringify(interface_dict)
+            }
+            $.ajax({
+                type: 'post',
+                url: url,
+                data: data,
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                success: function (response) {
+                    if (!response.success) {
+                        show_alert('更新数据失败');
+                    } else {
+                        if (url === '/interface/add') {
+                            window.location.href = '/interface_detail/'+ response.res
+                        }
+                        var time_string = new URLSearchParams(window.location.search);
+                        var use_case_id = time_string.get('use_case_id');
+                        if (use_case_id) {
+                            window.location.href = '/use_case/1?use_case_detail&use_case_id='+ use_case_id
+                        }
+                        get_interface_detail();
+                        loader.hide();
+                    }
+                }
+            })
+        })
+    });
+
+    $('#menu_tree').treeview({
+        data: getTree(),
+        onNodeSelected: function (event, data) {
+            $('#menu_tree').treeview('collapseAll', {silent: true});
+            if (data.text != '接口管理') {
+                $('#menu_tree').treeview('collapseNode', [data.nodeId, {silent: true}]);
+                getMapfromUrl(data);
+            } else if (data.state.selected) {
+                getMapfromUrl(data);
+            }
+        }
+    });
+</script>
+
+</body>
+</html>

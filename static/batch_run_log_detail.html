@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="utf8">
+
+<head>
+    <title>自动化巡检测试系统-批次日志详情</title>
+
+    <link href="/component/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/component/css/treeview.min.css" rel="stylesheet">
+    <link href="/css/main.css" rel="stylesheet">
+    <link href="/css/loader.css" rel="stylesheet">
+
+</head>
+
+<body>
+<div id="wrapper">
+    <div id="sidebar-wrapper">
+        <ul class="sidebar-nav">
+            <li class="sidebar-brand"><a href="/">自动巡检测试系统</a></li>
+            <li id="menu_tree"></li>
+        </ul>
+    </div>
+
+    <div id="page-content-wrapper">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item active" aria-current="page">批次运行详情</li>
+            </ol>
+        </nav>
+
+        <div id="loader"></div>
+        <div id="error_alert" class="alert alert-danger" role="alert"></div>
+
+        <table class="table" id="batch_run_log_detail_table">
+            <thead>
+            <tr>
+                <th scope="col">#</th>
+                <th scope="col">用例名称</th>
+                <th scope="col">测试通过</th>
+                <th scope="col">开始时间</th>
+                <th scope="col">结束时间</th>
+                <th scope="col">耗时(s)</th>
+                <th scope="col">操作</th>
+            </tr>
+            </thead>
+            <tbody>
+            </tbody>
+        </table>
+
+        <nav aria-label="Page navigation">
+            <ul class="pagination">
+                <li class="page-item" id="previous_page"><a class="page-link" href="#">上一页</a></li>
+                <li class="page-item" id="next_page"><a class="page-link" href="#">下一页</a></li>
+                <input id="input_page" value=""/>
+                <button id="jump_page" class="btn btn-primary btn-sm" style="height: 35px" >跳转</button>
+            </ul>
+        </nav>
+
+    </div>
+</div>
+
+<script src="/component/js/jquery-3.3.1.min.js"></script>
+<script src="/component/js/treeview.min.js"></script>
+<script src="/component/js/popper.min.js"></script>
+<script src="/component/js/bootstrap.min.js"></script>
+<script src="/component/js/moment.min.js"></script>
+<script src="/js/cmm.js"></script>
+
+<script>
+    function escapeHtml(string) {
+        var entityMap = {
+            "&": "&amp;",
+            "<": "&lt;",
+            ">": "&gt;",
+            '"': '&quot;',
+            "'": '&#39;',
+            "/": '&#x2F;'
+        };
+        return String(string).replace(/[&<>"'\/]/g, function (s) {
+            return entityMap[s];
+        });
+    }
+
+    var page_size = 20;
+
+
+    var error_alert = $("#error_alert");
+    var loader = $("#loader");
+
+    function show_alert(alert_text){
+        loader.hide();
+        error_alert.text(alert_text);
+        error_alert.show();
+    }
+    $(document).ready(function() {
+        var url_path = window.location.pathname.split("/");
+        var page_num = url_path.pop();
+        var batch_run_log_id = url_path.pop();
+        var base_url =  window.location.pathname.substring(0, -1);
+        var url_string = new URLSearchParams(window.location.search);
+        var from_time = url_string.get('from_time');
+        var to_time = url_string.get('to_time');
+        var time_url = '';
+        $('#page-content-wrapper .breadcrumb-item').text(url_string.get('name'));
+        if (from_time){
+            time_url = "?from_time="+ from_time;
+            from_time += ':00.000'
+        }
+        if (to_time){
+            time_url += "&to_time=" + to_time;
+            to_time += ':00.000'
+        }
+
+        $.ajax({
+            type: 'post',
+            url: '/run_log/use_case/count',
+            data: JSON.stringify({
+                'from_time': from_time,
+                'to_time': to_time,
+                'batch_run_log_id': batch_run_log_id
+            }),
+            contentType: "application/json; charset=utf-8",
+            dataType: "json",
+            success: function (response) {
+                $(".pagination").hide();
+                if (!response.success) {
+                    show_alert("获取用例运行日志失败");
+                } else {
+                    var total_use_case_run_log = response.res;
+                    var total_page = Math.ceil(total_use_case_run_log / page_size);
+                    if (page_num > total_page || page_num <= 0 || isNaN(page_num)) {
+                        show_alert("无此页数据");
+                    } else {
+                        $(".pagination").show();
+                        var previous_page = $('li[id="previous_page"]');
+                        var next_page = $('li[id="next_page"]');
+                        if (total_page == 1) {
+                            previous_page.addClass('disabled');
+                            next_page.addClass('disabled')
+                        }
+                        else if (page_num == 1) {
+                            previous_page.addClass('disabled');
+                            next_page.find('.page-link').attr('href', base_url + (Number(page_num) + 1), time_url)
+                        } else if (page_num == total_page) {
+                            next_page.addClass('disabled');
+                            previous_page.find('.page-link').attr('href', base_url +  (Number(page_num) - 1), time_url)
+                        } else {
+                            next_page.find('.page-link').attr('href', base_url +  (Number(page_num) + 1), time_url);
+                            previous_page.find('.page-link').attr('href', base_url + (Number(page_num) - 1), time_url)
+                        }
+                        var page_item_string = '';
+                        var after_page_item_string = '';
+                        var before_page_item_string = '';
+                        for (var i = 1; i <= total_page; i++) {
+                            if (i == page_num) {
+                                page_item_string += '<li class="page-item active"><a class="page-link" href="'+ base_url + i + time_url + '">' + i + '</a></li>'
+                            } else if (i>page_num && i-page_num >3){
+                                after_page_item_string = '<li class="page-item"><a class="page-link" href="'+ base_url + (Number(page_num)+4) + time_url+ '">...</a></li>';
+                            } else if ( i < page_num && page_num - i >3 ){
+                                before_page_item_string = '<li class="page-item"><a class="page-link" href="'+ base_url + (Number(page_num)-4) + time_url +'">...</a></li>'
+                            } else {
+                                page_item_string += '<li class="page-item"><a class="page-link" href="' +base_url + i  + time_url + '">' + i + '</a></li>'
+                            }
+                        }
+                        if (before_page_item_string){
+                            page_item_string = before_page_item_string + page_item_string
+                        }
+                        if (after_page_item_string){
+                            page_item_string = page_item_string + after_page_item_string
+                        }
+                        var first_page_disabled_str = '';
+                        var last_page_disabled_str = '';
+                        if (page_num == 1) {
+                            first_page_disabled_str = 'disabled';
+                            if (page_num == total_page) {
+                                last_page_disabled_str = 'disabled'
+                            }
+                        }else if (page_num == total_page){
+                            last_page_disabled_str = 'disabled'
+                        }
+                        var first_page_string = '<li class="page-item '+ first_page_disabled_str +'" id="first_page"><a class="page-link" href="' + base_url + '1'+ time_url+'">首页</a></li>';
+                        var last_page_string = '<li class="page-item '+ last_page_disabled_str +'" id="last_page"><a class="page-link" href="'+ base_url + total_page + time_url+'">尾页</a></li>';
+                        var data_page_string = '<p class="page-data" data-page-text="">第'+page_num+'页/共'+ total_page +'页</p>';
+                        previous_page.before(first_page_string);
+                        previous_page.after(page_item_string);
+                        next_page.after(data_page_string);
+                        next_page.after(last_page_string);
+                        $.ajax({
+                            type:'post',
+                            url: '/run_log/use_case/info',
+                            data: JSON.stringify({
+                                'pageSize': page_size,
+                                'pageIndex': page_num,
+                                'from_time':from_time,
+                                'to_time': to_time,
+                                'batch_run_log_id': batch_run_log_id
+                            }),
+                            contentType:'application/json; charset=utf-8',
+                            dataType:'json',
+                            success: function (response) {
+                                loader.hide();
+                                if (!response.success){
+                                    show_alert('获取数据失败')
+                                }else {
+                                    var use_case_run_log_list = response.res;
+                                    $("#batch_run_log_detail_table").show();
+                                    if (!use_case_run_log_list) {
+                                        show_alert("无用例运行日志，请确认批次用例是否运行")
+                                    }
+                                    $.each(use_case_run_log_list, function (i, use_case_run_log) {
+                                        var button_col = '<div class="btn-group btn-group-sm" role="group">'+
+                                                '<a class="btn btn-info" href="/use_case_run_log/detail/' +use_case_run_log.id + time_url + '&name='+ use_case_run_log.use_case_name +'" role="button">详情</a></button>';
+                                        var is_pass_string = '';
+                                        if (use_case_run_log.is_pass) {
+                                            is_pass_string = '<td>是</td>';
+                                        } else{
+                                            is_pass_string = '<td style="color: red; font-weight: bold;">否</td>';
+                                        }
+                                        var start_time = "";
+                                        var end_time = "";
+                                        if (!use_case_run_log.start_time) {
+                                            start_time = "";
+                                        } else{
+                                            start_time = use_case_run_log.start_time.substring(0, 23);
+                                        }
+                                        if (!use_case_run_log.end_time) {
+                                            end_time = '';
+                                        } else{
+                                            end_time = use_case_run_log.end_time.substring(0, 23);
+                                        }
+                                        $("#batch_run_log_detail_table").find('tbody').
+                                        append('<tr>'+
+                                            '<th scope="row">' + (page_size * (page_num - 1 ) + i + 1) + '</th>' +
+                                            '<td>' + use_case_run_log.use_case_name + '</td>' +
+                                            is_pass_string +
+                                            '<td>' + start_time + '</td>' +
+                                            '<td>' + end_time + '</td>' +
+                                            '<td>' + use_case_run_log.cost_time + '</td>' +
+                                            '<td>' + button_col + '</td></tr>')
+                                    });
+                                }
+
+                            }
+                        })
+
+                    }
+                }
+            }
+        })
+    });
+
+    $(document).ready(function () {
+        $("#interface_run_log_table").on('click', '.test', function () {
+            var button = $(this).find('button');
+            if (button.data('value') == 'open') {
+                button.closest('tr').after('<tr><td colspan="7">' + button.data('json') + '</td></tr>');
+                button.data('value', 'close');
+            } else if (button.data('value') == 'close') {
+                button.closest('tr').next('tr').remove();
+                button.data('value', 'open');
+            }
+
+        })
+    });
+
+    $(document).ready(function () {
+        var tree_data = getTree();
+        tree_data[4]['nodes'] = [
+            {
+                text: "用例运行日志",
+                tags: ['available'],
+                color: "#8f9baa",
+                backColor: "transparent",
+                href: "/use_case_run_log/1",
+                state:{
+                    expanded:true
+                }
+            },
+            {
+                text: "批次运行日志",
+                tags: ['available'],
+                color: "#ffffff",
+                backColor: "transparent",
+                href: "/batch_run_log/1",
+                state:{
+                    expanded:true
+                }
+            }
+        ];
+        $('#menu_tree').treeview({
+            data: tree_data,
+            onNodeSelected: function (event, data) {
+                $('#menu_tree').treeview('collapseAll', {silent: true});
+                if (data.text != '批次管理') {
+                    $('#menu_tree').treeview('collapseNode', [data.nodeId, {silent: true}]);
+                    getMapfromUrl(data);
+                } else if (data.state.selected) {
+                    getMapfromUrl(data);
+                }
+            }
+        });
+    })
+</script>
+
+</body>
+</html>

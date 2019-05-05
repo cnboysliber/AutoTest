@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>自动化巡检测试系统-批次详情</title>
+
+    <link href="/component/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/component/css/treeview.min.css" rel="stylesheet">
+    <link href="/css/main.css" rel="stylesheet">
+    <link href="/css/loader.css" rel="stylesheet">
+</head>
+<body>
+<div id="wrapper">
+    <div id="sidebar-wrapper">
+        <ul class="sidebar-nav">
+            <li class="sidebar-brand"><a href="/">自动巡检测试系统</a></li>
+            <li id="menu_tree"></li>
+        </ul>
+    </div>
+
+    <div id="page-content-wrapper">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="/batch/1">批次管理</a></li>
+                <li class="breadcrumb-item active" aria-current="page">批次</li>
+            </ol>
+        </nav>
+        <HR>
+
+        <div id="loader"></div>
+        <div id="error_alert" class="alert alert-danger" role="alert"></div>
+
+        <form id="batch_form" class="detail_form">
+            <div class="form-group">
+                <label for="batch_id" style="display: none;">接口id</label>
+                <input style="display: none;" type="text" class="form-control" id="batch_id" placeholder=""
+                       readonly>
+            </div>
+            <div class="form-group">
+                <label for="batch_name">名称</label>
+                <input type="text" class="form-control" id="batch_name" placeholder="批次名称" value="">
+            </div>
+            <div class="input-select">
+                <label for="environment_name">环境路线</label>
+                <select id="environment_name" class="select" onchange="select_onchange(this)">
+                </select>
+            </div>
+            <div class="form-row">
+                <div class="form-group form-check mb-2 mr-sm-2">
+                    <input type="checkbox" class="form-check-input" id="batch_auto_run"  data-toggle="modal"  data-target="#batch_auto_run-info">
+                    <label class="form-check-label" for="batch_auto_run">自动运行</label>
+                </div>
+                <div class="form-group form-check mb-2 mr-sm-2">
+                    <input type="checkbox" class="form-check-input" id="alarm_monitor" data-toggle="modal"  data-target="#alarm_monitor_info">
+                    <label class="form-check-label" for="alarm_monitor">告警监控</label>
+                </div>
+            </div>
+        </form>
+        <button class="btn btn-primary detail_submit" id="submit_batch">提交</button>
+
+        <HR>
+        <h6 id="use_case_list_title" style="margin-left: 25%">批次用例列表</h6>
+
+        <button id="add_use_case_button" style="margin: 0 0 20px 25%;" type="button" class="btn btn-primary btn-sm"
+                data-toggle="modal"
+                data-target="#addUseCaseModal">
+            新增用例
+        </button>
+
+        <div id="use_case_alert" class="alert alert-danger" role="alert"></div>
+
+        <!--批次包含用例列表-->
+        <ul class="list-group" id="batch_use_case_list"></ul>
+
+        <!--添加用例弹出框-->
+        <div class="modal fade" id="addUseCaseModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel"
+             aria-hidden="true">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="exampleModalLabel">添加用例</h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <input type="text" id="use_case_search" onkeyup="use_case_search()" placeholder="搜索用例">
+                        <!--所有用例列表-->
+                        <ul class="list-group" id="use_caseUL" style="max-height: 300px; overflow-y:scroll;"></ul>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" name="cancel_add_use_case" class="btn btn-secondary" data-dismiss="modal">取消</button>
+                        <button type="button" name="add_use_case" class="btn btn-primary">添加</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!--删除用例弹出确认框-->
+        <div class="modal fade" id="deleteUseCaseModal" tabindex="-1" role="dialog" aria-hidden="true">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">删除用例</h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <p>确认要删除吗？</p>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" name="delete-cancel-btn" data-dismiss="modal">取消</button>
+                        <button type="button" class="btn btn-danger" name="delete-confirm-btn" value="">确认删除</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!--勾选监控选项提示-->
+        <div class="modal fade" id="alarm_monitor_info" tabindex="-1" role="dialog" data-backdrop="static">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" style="color: red">提示</h5>
+                    </div>
+                    <div class="modal-body">
+                        <p>请确认是否是线上环境,如果运行的不是线上环境,请取消监控选项,是否继续？</p>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" name="alarm_monitor-cancel">取消</button>
+                        <button type="button" class="btn btn-danger" name="alarm_monitor-confirm">继续</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!--勾选自动运行选项提示-->
+        <div class="modal fade" id="batch_auto_run-info" tabindex="-1" role="dialog" data-backdrop="static">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" style="color: red">提示</h5>
+                    </div>
+                    <div class="modal-body">
+                        <p>选择自动运行后，该批次用例会每20分钟自动触发一次，是否继续？</p>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" name="batch_auto_run-cancel">取消</button>
+                        <button type="button" class="btn btn-danger" name="batch_auto_run-confirm">继续</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="/component/js/jquery-3.3.1.min.js"></script>
+<script src="/component/js/popper.min.js"></script>
+<script src="/component/js/bootstrap.min.js"></script>
+<script src="/component/js/treeview.min.js"></script>
+<script src="/js/cmm.js"></script>
+
+<script>
+    var error_alert = $("#error_alert");
+    var loader = $("#loader");
+
+    function show_alert(alert_text) {
+        loader.hide();
+        error_alert.text(alert_text);
+        error_alert.show();
+    }
+
+    $(document).ready(function () {
+        var batch_id = window.location.pathname.split('/').pop();
+        loader.show()
+        if (batch_id != 'new') {
+            $.ajax({
+                type: 'post',
+                url: '/batch/detail',
+                data: JSON.stringify({
+                    'id': batch_id
+                }),
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                success: function (response) {
+                    loader.hide();
+                    if (!response.success) {
+                        show_alert('获取数据失败');
+                    } else {
+                        var batch_detail = response.res;
+                        error_alert.hide();
+                        loader.hide();
+                        $("#batch_id").attr('placeholder', batch_detail.id);
+                        $("#batch_name").val(batch_detail.batch_name);
+                        select_environment_line_append(batch_detail.environment_id);
+                        if (batch_detail.auto_run) {
+                            $("#batch_auto_run").prop('checked', true);
+                        }
+                        if (batch_detail.alarm_monitor) {
+                            $("#alarm_monitor").prop('checked', true);
+                        }
+
+                        var use_case_list = batch_detail.use_case_list;
+                        if (use_case_list.length == 0) {
+                            $("#use_case_alert").text('此批次目前没有用例，请添加');
+                            $("#use_case_alert").show();
+                        } else {
+                            $.each(use_case_list, function (i, use_case) {
+                                var use_case_li = '<li class="list-group-item d-flex justify-content-between align-items-center">\n' +
+                                    '                  ' + use_case.use_case_name + '\n' +
+                                    '                  <button type="button" data-value="' + use_case.id + '" class="btn btn-info btn-sm delete-use-case" data-toggle="modal" data-target="#deleteUseCaseModal">删除</button>\n' +
+                                    '              </li>';
+                                $("#batch_use_case_list").append(use_case_li);
+                            });
+                        }
+
+                        $("#batch_form").show();
+                        $("#submit_batch").html('更新');
+                        $("#submit_batch").show();
+                    }
+                }
+            })
+        } else {
+            $("#use_case_list_title").hide();
+            $("#add_use_case_button").hide();
+            $("#batch_use_case_list").hide();
+            loader.hide();
+            $("#batch_form").show();
+            $("#submit_batch").html('新增');
+            $("#submit_batch").show();
+        }
+    });
+
+    $(document).ready(function () {
+        $("#submit_batch").click(function () {
+            var environment_id = $("#environment_name").data('environment_id');
+            var batch_dict = {
+                'batch_name': $("#batch_name").val(),
+                'environment_id': environment_id,
+                'auto_run': $("#batch_auto_run").is(':checked'),
+                'alarm_monitor': $("#alarm_monitor").is(':checked')
+            };
+            var batch_id = $("#batch_id").attr('placeholder');
+            if (!batch_id) {
+                var url = '/batch/add';
+                var data = JSON.stringify(batch_dict)
+            } else {
+                var url = '/batch/update';
+                batch_dict.id = batch_id;
+                var data = JSON.stringify(batch_dict)
+            }
+            $.ajax({
+                type: 'post',
+                url: url,
+                data: data,
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                success: function (response) {
+                    if (!response.success) {
+                        show_alert('更新（添加）批次数据失败');
+                    } else {
+                        window.location.href = '/batch_detail/' + response.res
+                    }
+                }
+            })
+        })
+    });
+
+    function update_batch_check_status(kwarg) {
+        kwarg["id"] = $("#batch_id").attr('placeholder');
+        $.ajax({
+            type: 'post',
+            url: '/batch/update',
+            data: JSON.stringify(kwarg),
+            contentType: "application/json; charset=utf-8",
+            dataType: "json",
+            success: function (response) {
+                if (!response.success) {
+                    show_alert('更新（添加）批次数据失败');
+                } else {
+
+                }
+            }
+        })
+    }
+
+    // 获取所有用例列表并放入接口添加列表
+    $(document).ready(function () {
+        $.ajax({
+            type: 'post',
+            url: '/batch/search/use_case/list',
+            data: JSON.stringify({
+                // 'pageIndex': 0,
+                // 'pageSize': 0
+            }),
+            contentType: "application/json; charset=utf-8",
+            dataType: "json",
+            success: function (response) {
+                if (!response.success) {
+                    show_alert('获取数据失败')
+                } else {
+                    var use_case_list = response.res;
+                    let use_case_type = {
+                        0: '测试',
+                        1: '巡检'
+                    };
+                    error_alert.hide();
+                    $.each(use_case_list, function (i, use_case) {
+                        $("#use_caseUL").append('<li data-value="' + use_case.id + '" class="list-group-item">【' + use_case_type[use_case.type] + '】' + use_case.use_case_name + '</li>')
+                    })
+                }
+            }
+        })
+    });
+
+    // 用例添加列表搜索功能
+    function use_case_search() {
+        var input, filter, ul, li, item, i;
+        input = document.getElementById('use_case_search');
+        filter = input.value.toUpperCase();
+        ul = document.getElementById('use_caseUL');
+        li = ul.getElementsByTagName('li');
+
+        for (i = 0; i < li.length; i++) {
+            item = li[i];
+            if (item.innerHTML.toUpperCase().indexOf(filter) > -1) {
+                item.style.display = '';
+            } else {
+                if (!item.classList.contains('active')) {
+                    item.style.display = 'none';
+                }
+            }
+        }
+    }
+
+    // 用例添加列表点击选中功能
+    $(document).ready(function () {
+        var ul = $("#use_caseUL");
+        ul.on('click', 'li', function () {
+           if(!$(this).hasClass("active")) {
+                $(this).addClass('active');
+            } else {
+                $(this).removeClass('active');
+            }
+        })
+    });
+
+    // 监控告警取消
+    $(document).ready(function () {
+        $('button[name="alarm_monitor-cancel"]').click(function () {
+            if ($("#alarm_monitor").prop("checked")) {
+                $("#alarm_monitor").prop("checked",false)
+            } else {
+                $("#alarm_monitor").prop("checked",true);
+            }
+            $("#alarm_monitor_info").modal('hide');
+        })
+    });
+
+    // 监控告警确认
+    $(document).ready(function () {
+        $('button[name="alarm_monitor-confirm"]').click(function () {
+            update_batch_check_status({
+                'alarm_monitor': $("#alarm_monitor").prop("checked")
+            });
+            $("#alarm_monitor_info").modal('hide');
+        })
+    });
+
+
+    $(document).ready(function () {
+        $('button[name="cancel_add_use_case"]').click(function () {
+            var selected_use_case_list = $("#use_caseUL").find('.active');
+            $.each(selected_use_case_list, function (i, selected_use_case) {
+                $(selected_use_case).removeClass("active");
+            });
+        })
+    });
+
+    // 自动运行选项取消
+    $(document).ready(function () {
+        $('button[name="batch_auto_run-cancel"]').click(function () {
+            if ($("#batch_auto_run").prop("checked")) {
+                $("#batch_auto_run").prop("checked",false);
+            } else {
+                $("#batch_auto_run").prop("checked",true);
+            }
+            $("#batch_auto_run-info").modal('hide');
+        })
+    });
+
+    // 自动运行选项确认
+    $(document).ready(function () {
+        $('button[name="batch_auto_run-confirm"]').click(function () {
+            update_batch_check_status({
+                'auto_run': $("#batch_auto_run").prop("checked")
+            });
+            $("#batch_auto_run-info").modal('hide');
+        })
+    });
+
+    // 添加用例到批次
+    $(document).ready(function () {
+        $('button[name="add_use_case"]').click(function () {
+            var selected_use_case_list = $("#use_caseUL").find('.active');
+            if (selected_use_case_list.length <= 0) {
+                location.reload();
+            } else {
+                var batch_id = window.location.pathname.split('/').pop();
+                var use_case_arr = [];
+                var selected_use_case_id = '';
+                $.each(selected_use_case_list, function (i, selected_use_case) {
+                    selected_use_case_id = $(selected_use_case).data('value');
+                    use_case_arr[i] = selected_use_case_id;
+                    $(selected_use_case).removeClass("active");
+                });
+                $.ajax({
+                    type: 'post',
+                    url: '/batch/relation/add',
+                    data: JSON.stringify({
+                        'batch_id': batch_id,
+                        'use_case_id': use_case_arr
+                    }),
+                    contentType: "application/json; charset=utf-8",
+                    dataType: "json",
+                    success: function (response) {
+                        if (!response.success) {
+                            show_alert('更新数据失败')
+                        } else {
+                            location.reload();
+                        }
+                    }
+                })
+            }
+        })
+    });
+
+
+    // 预删除用例
+    $(document).ready(function () {
+        $("#batch_use_case_list").on('click', '.delete-use-case', function () {
+            var to_delete = $(this).data('value');
+            var delete_button = $('button[name="delete-confirm-btn"]');
+            delete_button.val(to_delete);
+        })
+    });
+    
+    // 删除用例
+    $(document).ready(function () {
+        $('button[name="delete-confirm-btn"]').click(function () {
+            var id_to_delete = $(this).val();
+            $.ajax({
+                type: 'post',
+                url: '/batch/relation/delete',
+                data: JSON.stringify({
+                    'id': id_to_delete
+                }),
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                success: function (response) {
+                    if (!response.success) {
+                        show_alert('更新数据失败')
+                    } else {
+                        location.reload();
+                    }
+                }
+            })
+        })
+    });
+
+    function select_environment_line_append(environment_id) {
+        $("#environment_name").empty();
+        $.ajax({
+            type: 'post',
+            url: '/environment/line/detail',
+            data: JSON.stringify({
+            }),
+            contentType: "application/json; charset=utf-8",
+            dataType: "json",
+            success: function (response) {
+                var environment_list = response.res;
+                var append_str = '<option data-environment_id="0"></option>';
+                if (environment_list.length > 0) {
+                    $.each(environment_list, function (i, environment_info) {
+                        if (environment_info.id == environment_id) {
+                            $("#environment_name").data('environment_id', environment_info.id);
+                            $("#environment_name").val(environment_info.environment_name);
+                            append_str += '<option selected="true" data-environment_id="' + environment_info.id + '">' + environment_info.environment_name + '</option>';
+                        } else {
+                            append_str += '<option data-environment_id="' + environment_info.id + '">' + environment_info.environment_name + '</option>';
+                        }
+                    });
+                    $("#environment_name").append(append_str)
+                }
+            }
+        });
+    }
+
+    function select_onchange(selector) {
+        $(selector).val($(selector).val());
+        $(selector).data($(selector).data());
+        var option_length=$("option").length;
+        for(var i=0;i<option_length;i++){
+            var option_id = $("option").eq(i).data();
+            var option_value = $("option").eq(i).val();
+            if($(selector).val()==option_value){
+                $(selector).data(option_id);
+                $("option").eq(i).attr('select', true);
+                break;
+            }
+        }
+    }
+
+    $('#menu_tree').treeview({
+            data: getTree(),
+            onNodeSelected: function (event, data) {
+                $('#menu_tree').treeview('collapseAll', {silent: true});
+                if (data.text != '批次管理') {
+                    $('#menu_tree').treeview('collapseNode', [data.nodeId, {silent: true}]);
+                    getMapfromUrl(data);
+                } else if (data.state.selected) {
+                    getMapfromUrl(data);
+                }
+            }
+        });
+</script>
+
+</body>
+</html>
