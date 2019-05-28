@@ -5,8 +5,13 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="ce1b40ab-58f3-4084-b586-be19a1dcc6f4" name="Default" comment="加密算法优化">
-      <change beforePath="$PROJECT_DIR$/.idea/inspectionProfiles/Project_Default.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/inspectionProfiles/Project_Default.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/AutoTest.iml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/encodings.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/inspectionProfiles/Project_Default.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/modules.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/vcs.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="TRACKING_ENABLED" value="true" />
@@ -67,7 +72,7 @@
       <file leaf-file-name="encryption.py" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/application/util/encryption.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="206">
+            <state relative-caret-position="421">
               <caret line="185" selection-start-line="185" selection-end-line="185" />
             </state>
           </provider>
@@ -76,8 +81,8 @@
       <file leaf-file-name="execute_test.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/application/util/execute_test.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="258">
-              <caret line="205" column="71" lean-forward="true" selection-start-line="205" selection-start-column="71" selection-end-line="205" selection-end-column="71" />
+            <state relative-caret-position="2640">
+              <caret line="205" column="71" selection-start-line="205" selection-start-column="71" selection-end-line="205" selection-end-column="71" />
               <folding>
                 <element signature="e#0#11#0" expanded="true" />
               </folding>
@@ -241,7 +246,6 @@
       <foldersAlwaysOnTop value="true" />
     </navigator>
     <panes>
-      <pane id="Scope" />
       <pane id="ProjectPane">
         <subPane>
           <expand>
@@ -258,6 +262,7 @@
           <select />
         </subPane>
       </pane>
+      <pane id="Scope" />
     </panes>
   </component>
   <component name="PropertiesComponent">
@@ -275,7 +280,7 @@
     <property name="node.js.selected.package.stylelint" value="" />
     <property name="nodejs_interpreter_path.stuck_in_default_project" value="undefined stuck path" />
     <property name="nodejs_npm_path_reset_for_default_project" value="true" />
-    <property name="settings.editor.selected.configurable" value="com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable" />
+    <property name="settings.editor.selected.configurable" value="preferences.pluginManager" />
   </component>
   <component name="PyConsoleOptionsProvider">
     <option name="myPythonConsoleState">
@@ -960,11 +965,11 @@
       <window_info anchor="bottom" id="TODO" order="6" weight="0.3181818" />
       <window_info anchor="bottom" id="Event Log" order="10" sideWeight="0.5022981" side_tool="true" weight="0.4221968" />
       <window_info anchor="bottom" id="Database Changes" order="9" show_stripe_button="false" />
-      <window_info anchor="bottom" id="Run" order="2" sideWeight="0.4977019" visible="true" weight="0.2791762" />
+      <window_info anchor="bottom" id="Run" order="2" sideWeight="0.4977019" weight="0.2791762" />
       <window_info anchor="bottom" id="Version Control" order="8" weight="0.26201373" />
       <window_info anchor="bottom" id="Python Console" order="12" weight="0.41762012" />
       <window_info anchor="bottom" id="Terminal" order="11" sideWeight="0.7019041" weight="0.35085714" />
-      <window_info active="true" content_ui="combo" id="Project" order="0" sideWeight="0.49814126" visible="true" weight="0.2908733" />
+      <window_info active="true" content_ui="combo" id="Project" order="0" sideWeight="0.49814126" visible="true" weight="0.29481286" />
       <window_info anchor="bottom" id="Docker" order="7" show_stripe_button="false" />
       <window_info anchor="right" id="Database" order="3" weight="0.3295711" />
       <window_info anchor="right" id="SciView" order="4" weight="0.32928476" />
@@ -1070,9 +1075,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="570">
           <caret line="48" lean-forward="true" selection-start-line="48" selection-end-line="48" selection-end-column="15" />
-          <folding>
-            <element signature="e#0#9#0" expanded="true" />
-          </folding>
         </state>
       </provider>
     </entry>
@@ -1336,9 +1338,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="720">
           <caret line="48" selection-start-line="48" selection-end-line="48" selection-end-column="15" />
-          <folding>
-            <element signature="e#0#9#0" expanded="true" />
-          </folding>
         </state>
       </provider>
     </entry>
@@ -1414,8 +1413,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/application/util/execute_test.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="258">
-          <caret line="205" column="71" lean-forward="true" selection-start-line="205" selection-start-column="71" selection-end-line="205" selection-end-column="71" />
+        <state relative-caret-position="2640">
+          <caret line="205" column="71" selection-start-line="205" selection-start-column="71" selection-end-line="205" selection-end-column="71" />
           <folding>
             <element signature="e#0#11#0" expanded="true" />
           </folding>
@@ -1424,7 +1423,7 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/application/util/encryption.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="206">
+        <state relative-caret-position="421">
           <caret line="185" selection-start-line="185" selection-end-line="185" />
         </state>
       </provider>
