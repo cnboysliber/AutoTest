@@ -200,7 +200,6 @@ def run_use_case(use_case_id, batch_log_id=None, environment_id=None, relation_i
                 if header:
                     header = json.loads(header)
                 if json_payload:
-                    json_payload = json.loads(json_payload)
                     if interface['interface_encryption'] != 0:
                         encryption_method = encryption_dict[interface['interface_encryption']]
                         method = getattr(Encryption, encryption_method)
@@ -208,8 +207,6 @@ def run_use_case(use_case_id, batch_log_id=None, environment_id=None, relation_i
                             header = method(json_payload, header)
                         elif interface['interface_encryption'] == 5:
                             url, json_payload = method(url, json_payload)
-                        elif interface['interface_encryption'] == 6:
-                            json_payload = method(json_payload)
                         else:
                             json_payload = method(json_payload)
             except Exception as e:

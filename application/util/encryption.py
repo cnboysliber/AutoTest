@@ -177,6 +177,24 @@ def xian_yu_rc4_encryption(json_payload):
     return res.content.decode()
 
 
+def hsb_cooperation_channel_encryption(json_payload):
+    """
+    回收宝合作渠道加密
+    :param json_payload:
+    :return:
+    """
+    json_payload = json.loads(json_payload.strip('data='))
+    key = 'HSB-sdfaaa_sdJHUGsdiJl'
+    kwargs = {k: v for k, v in json_payload.items() if v.strip() and k != 'sign'}
+    keys = sorted(kwargs.keys())
+    sign_str = '&'.join(['%s=%s' % (key, kwargs[key]) for key in keys]) + '&key={}'.format(key)
+    encry_times = sum([ord(str(ch)) for ch in sign_str]) % 3 + 3
+    for _ in range(encry_times):
+        sign_str = calc_md5(sign_str).upper()
+    json_payload['sign'] = sign_str
+    return 'data=' + json.dumps(json_payload)
+
+
 if __name__ == '__main__':
     # url = 'http://openapi.huishoubao.com/xianyu_platform/eva_template?' \
     #       'source_appkey=24696122&target_appkey=24633185'
