@@ -1,7 +1,7 @@
 ## 自动化测试系统
 
 ### 部署方式：
-  安装依赖包： pip install -r requirement.txt
+  安装依赖包： pip install -r requirements.txt
   线上环境配置：
   <br>
   默认启动即可(python AutoTest.py或uwsgi启动)
