@@ -1,5 +1,7 @@
 ## 自动化测试系统
-
+平台技术：python + flask + mysql + redis + jquery + html实现的前后端分离框架
+用例运行可批次化运行、单独运行，批次运行使用的是线程池方式
+支持报表定时邮件发送指定人员
 ### 1.部署方式：
   安装依赖包： pip install -r requirements.txt
   线上环境配置：
