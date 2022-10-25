@@ -25,7 +25,9 @@
 
 json例子:
 
+```
 { "head":{ "a": 1, "param1": ${param1} }, "body": { "b": 2, "param2": ${param1} } }
+```
 
 其中param1及param2为需要替换的预留参数位, 使用${param1}以及${param2}代替
 
