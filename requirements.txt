@@ -10,5 +10,5 @@ PyMySQL >= 0.8.0
 pandas >= 0.23.0
 numpy >= 1.14.3
 redis >= 2.10.6
-uwsgi == 2.0.17
+uwsgi == 2.0.22
 urllib3
